@@ -15,7 +15,7 @@ class Tool:
 
 
 TOOLS = {
-    "compress-pdf": Tool("Compress PDF", "Organize", prompt="Compression", choices=("medium", "low", "high")),
+    "compress-pdf": Tool("Compress PDF", "Organize", prompt="Compression", choices=("medium", "low", "high", "extreme")),
     "merge-pdf": Tool("Merge PDFs", "Organize", minimum=2, maximum=8, hint="Files are merged in selection order."),
     "split-pdf": Tool("Split PDF", "Organize", hint="Download one PDF per page, packaged together."),
     "rotate-pdf": Tool("Rotate PDF", "Organize", prompt="Clockwise rotation", choices=("90", "180", "270")),
@@ -33,7 +33,7 @@ TOOLS = {
     "unlock-pdf": Tool("Unlock PDF", "Protect", prompt="Current password"),
     "bates-numbering": Tool("Bates numbering", "Edit", prompt="Number prefix", hint="For example, DOC-."),
     "redact-pdf": Tool("Redact searchable text", "Protect", prompt="Word or phrase to remove", hint="Removes matching searchable text. Review every page before sharing."),
-    "sign-pdf": Tool("Sign PDF visually", "Edit", ("pdf","png"), minimum=2, maximum=2,
+    "sign-pdf": Tool("Sign PDF visually", "Edit", ("pdf","png"), minimum=1, maximum=2,
                      hint="Choose one PDF and one PNG signature. Places a visual signature at the bottom of page one. No certificate is issued."),
     "compare-pdf": Tool("Compare PDFs", "Edit", minimum=2, maximum=2, hint="Choose the original first and the revised file second."),
     "pdf-metadata-editor": Tool("Edit PDF title", "Edit", prompt="New document title"),
@@ -52,6 +52,6 @@ COMING_SOON = {
 UNAVAILABLE = {
     "ai-pdf-summary": "AI PDF Summary", "ai-pdf-chat": "PDF Chat",
     "ai-document-qa": "Document Q&A", "ai-invoice-extraction": "Invoice Extraction",
-    "ai-contract-analysis": "Contract Analysis", "ai-resume-parser": "Résumé Parser",
+    "ai-contract-analysis": "Contract Analysis", "ai-resume-parser": "RÃ©sumÃ© Parser",
     "ai-document-translator": "Document Translator",
 }

@@ -3,10 +3,18 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{ tool.name if tool else 'PDF tools' }} · Doxera</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='tools.css') }}">
-{% if slug == 'compress-pdf' %}<script defer src="{{ url_for('static', filename='compress.js') }}"></script>{% endif %}
+{% if error %}<link rel="stylesheet" href="{{ url_for('static', filename='tools.css') }}">{% else %}
+<link rel="icon" href="/static/ui/icon.svg"><link rel="stylesheet" href="/static/ui/app.css">
+<script type="module" src="/static/ui/app.js"></script>
+<noscript><link rel="stylesheet" href="{{ url_for('static', filename='tools.css') }}"></noscript>
+{% endif %}
 </head>
-<body>
+<body class="min-h-screen font-sans bg-[var(--background)] text-[var(--foreground)] selection:bg-brand-600 selection:text-white">
+{% if not error %}
+<div id="app" data-slug="{{ slug or '' }}" data-csrf="{{ session.csrf }}" data-source="{{ config.SOURCE_URL }}" data-privacy="{{ config.PRIVACY_EMAIL }}"
+ data-limits='{{ limits|tojson }}' data-coming='{{ coming_soon.keys()|list|tojson }}'></div>
+<noscript>
+{% endif %}
 <header><a class="brand" href="/">Doxera</a><a href="#privacy">File privacy</a></header>
 <main>
 {% if error %}
@@ -43,4 +51,4 @@
 <footer id="privacy"><h2>File privacy</h2><p>Uploads and results use temporary storage and are automatically deleted within one hour. We normally remove the files before sending your download. Keep your downloaded copy if you need it again.</p>
 {% if config.PRIVACY_EMAIL %}<p>Privacy contact <a href="mailto:{{ config.PRIVACY_EMAIL }}">{{ config.PRIVACY_EMAIL }}</a></p>{% endif %}
 {% if config.SOURCE_URL %}<a href="{{ config.SOURCE_URL }}">Source code for this version</a>{% endif %}</footer>
-</body></html>
+{% if not error %}</noscript>{% endif %}</body></html>

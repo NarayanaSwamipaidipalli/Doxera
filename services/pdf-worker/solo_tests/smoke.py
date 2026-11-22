@@ -60,10 +60,13 @@ def call(method, path, data=None, headers=None):
     return result
 
 
-def upload(slug, files, option, cookie, csrf):
+def upload(slug, files, option, cookie, csrf, parameters=None):
     boundary = uuid.uuid4().hex
     parts = []
-    for k,v in (("csrf",csrf), ("option",option)):
+    fields = [("csrf",csrf), ("option",option)]
+    if parameters is not None:
+        fields.append(("parameters",json.dumps(parameters)))
+    for k,v in fields:
         parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode())
     for name, data in files:
         parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="files"; filename="{name}"\r\nContent-Type: application/octet-stream\r\n\r\n'.encode())

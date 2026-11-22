@@ -22,5 +22,3 @@ services:
         value: trial
       - key: SOLO_TRIAL_PASSWORD
         sync: false
-      - key: SOLO_SOURCE_URL
-        value: https://github.com/NarayanaSwamipaidipalli/Doxera/archive/refs/tags/solo-v1.0.0-rc.2.tar.gz

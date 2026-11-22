@@ -14,7 +14,6 @@ import subprocess
 import sys
 import tempfile
 from datetime import timedelta
-from urllib.parse import urlsplit
 
 from flask import Flask, Request, Response, abort, render_template, request, send_file, session
 from werkzeug.exceptions import RequestEntityTooLarge
@@ -47,13 +46,8 @@ app.config.update(SECRET_KEY=key, SESSION_COOKIE_NAME="__Host-doxera_solo", SESS
                   SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Strict", PERMANENT_SESSION_LIFETIME=timedelta(hours=1),
                   MAX_CONTENT_LENGTH=100_100_000, MAX_FORM_PARTS=12, MAX_FORM_MEMORY_SIZE=128_000)
 trusted = [ipaddress.ip_network(value.strip()) for value in os.getenv("SOLO_TRUSTED_PROXY_CIDRS","").split(",") if value.strip()]
-source = os.getenv("SOLO_SOURCE_URL", "")
-if source and (urlsplit(source).scheme != "https" or not urlsplit(source).hostname or urlsplit(source).username):
-    raise RuntimeError("Use an approved HTTPS source URL")
-render_commit = os.environ.get("RENDER_GIT_COMMIT", "")
-if re.fullmatch(r"[0-9a-f]{40}", render_commit) and source.startswith("https://github.com/NarayanaSwamipaidipalli/Doxera/archive/"):
-    source = f"https://github.com/NarayanaSwamipaidipalli/Doxera/archive/{render_commit}.tar.gz"
-app.config["SOURCE_URL"] = source
+SOURCE_ARCHIVE = "https://github.com/NarayanaSwamipaidipalli/Doxera/archive/refs/tags/solo-v1.0.0-rc.3.tar.gz"
+app.config["SOURCE_URL"] = SOURCE_ARCHIVE
 contact = os.getenv("SOLO_PRIVACY_EMAIL", "")
 if contact and not re.fullmatch(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", contact, re.ASCII):
     raise RuntimeError("Use a valid public privacy email address")
@@ -85,8 +79,14 @@ def trial_gate():
 @app.after_request
 def headers(response):
     response.headers.update({"Cache-Control":"private, no-store", "X-Content-Type-Options":"nosniff",
-        "Referrer-Policy":"no-referrer","Content-Security-Policy":"default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"})
+        "Referrer-Policy":"no-referrer","Content-Security-Policy":"default-src 'none'; style-src 'self'; style-src-attr 'unsafe-inline'; worker-src 'self'; img-src 'self' blob: data:; font-src 'self' data:; script-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"})
     return response
+
+
+@app.context_processor
+def tool_limits():
+    return {"limits": {slug: {"min": t.minimum, "max": t.maximum, "extensions": t.extensions}
+                       for slug, t in TOOLS.items()}}
 
 
 @app.get("/health")
@@ -96,6 +96,9 @@ def health():
 
 @app.get("/")
 def home():
+    session.permanent = True
+    if "csrf" not in session:
+        session["csrf"] = secrets.token_urlsafe(32)
     return render_template("tools.html", tools=TOOLS, unavailable=UNAVAILABLE, coming_soon=COMING_SOON)
 
 
@@ -106,7 +109,7 @@ def tool_page(slug):
     session.permanent = True
     if "csrf" not in session:
         session["csrf"] = secrets.token_urlsafe(32)
-    return render_template("tools.html", tool=TOOLS[slug], slug=slug)
+    return render_template("tools.html", tool=TOOLS[slug], slug=slug, tools=TOOLS, unavailable=UNAVAILABLE, coming_soon=COMING_SOON)
 
 
 @app.errorhandler(413)
@@ -114,7 +117,7 @@ def too_large(_):
     return render_template("tools.html", error="Each file must be 50 MB or smaller. Use at most 100 MB per request."), 413
 
 
-def process(slug, folder, option):
+def process(slug, folder, option, parameters=None):
     env = {"PATH":os.defpath + ":/usr/local/bin", "PYTHONPATH":"/app", "HOME":str(folder), "TMPDIR":str(folder),
            "LANG":"C.UTF-8", "OPENBLAS_NUM_THREADS":"1", "OMP_THREAD_LIMIT":"1", "PYTHONDONTWRITEBYTECODE":"1",
            "SOLO_PARENT_PID":str(os.getpid()), "HTML_CONVERSION_TIMEOUT_SECONDS":"70", "OFFICE_CONVERSION_TIMEOUT_SECONDS":"70"}
@@ -122,7 +125,7 @@ def process(slug, folder, option):
     with subprocess.Popen([sys.executable,"-m","solo.process"], cwd=folder, env=env, stdin=subprocess.PIPE,
                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True) as child:
         try:
-            child.communicate(json.dumps({"tool":slug,"option":option}).encode(), timeout=90)
+            child.communicate(json.dumps({"tool":slug,"option":option,"parameters":parameters}).encode(), timeout=90)
         except subprocess.TimeoutExpired:
             os.killpg(child.pid, signal.SIGKILL)
             child.wait()
@@ -135,6 +138,10 @@ def process(slug, folder, option):
             if child.returncode == 3:
                 abort(422, "Compression could not make the PDF smaller at this level. Keep your original file or try High.")
             abort(422, "The PDF could not be rewritten. Your original file is unchanged.")
+        if child.returncode == 5:
+            message = folder / "input-error.txt"
+            if message.is_file() and not message.is_symlink() and message.stat().st_size <= 1600:
+                abort(422, message.read_text(encoding="utf-8"))
         if child.returncode:
             if slug == "compress-pdf":
                 logger.warning("compression level=%s reason=worker_exit exit=%d", option, child.returncode)
@@ -149,11 +156,37 @@ def failed(error):
     return render_template("tools.html", error=error.description), error.code
 
 
+def report_download(pdf, summary, slug):
+    """Stream the report and its UI details in one response before temporary paths expire."""
+    if summary.is_symlink() or not summary.is_file() or summary.stat().st_size > 4_000_000:
+        abort(422, "The report could not be produced.")
+    boundary = secrets.token_hex(24)
+    details = summary.read_bytes()
+    stream = pdf.open("rb")
+
+    def parts():
+        try:
+            yield f'--{boundary}\r\nContent-Disposition: form-data; name="summary"\r\n\r\n'.encode()
+            yield details
+            yield f'\r\n--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="{slug}.pdf"\r\nContent-Type: application/pdf\r\n\r\n'.encode()
+            yield from iter(lambda: stream.read(65536), b"")
+            yield f'\r\n--{boundary}--\r\n'.encode()
+        finally:
+            stream.close()
+
+    response = Response(parts(), content_type=f"multipart/form-data; boundary={boundary}")
+    response.call_on_close(stream.close)
+    return response
+
+
 @app.post("/tools/<slug>")
 def run_tool(slug):
     tool = TOOLS.get(slug)
     if not tool:
         abort(404)
+    if slug == "sign-pdf":
+        # The worker accepts up to 300 KB of decoded signature image. Allow for base64 framing.
+        request.max_form_memory_size = 450_000
     try:
         accepted = limit_ip(request.remote_addr, request.headers.get("X-Forwarded-For"), key, trusted)
     except (ValueError, OSError, sqlite3.Error):
@@ -174,9 +207,23 @@ def run_tool(slug):
         uploads = request.files.getlist("files")
         if not tool.minimum <= len(uploads) <= tool.maximum:
             abort(422, f"Choose {tool.minimum} to {tool.maximum} supported files.")
-        option = request.form.get("option", "")
-        if tool.prompt and (not option.strip() or len(option) > 500 or tool.choices and option not in tool.choices):
+        option = "" if slug == "batch-processing" else request.form.get("option", "")
+        parameters = None
+        if "parameters" in request.form:
+            try:
+                parameters = json.loads(request.form["parameters"])
+            except (ValueError, RecursionError):
+                abort(422, "Invalid tool settings.")
+            if not isinstance(parameters, dict) or len(parameters) > 30:
+                abort(422, "Invalid tool settings.")
+        if parameters is None and tool.prompt and (not option.strip() or len(option) > 500 or tool.choices and option not in tool.choices):
             abort(422, "Enter a valid tool setting.")
+        if parameters is not None:
+            # The richer controls still use the same allowlisted converter and bounded request.
+            if tool.choices and option not in tool.choices:
+                abort(422, "Choose a supported setting.")
+            if len(option) > 500:
+                abort(422, "This setting is too long.")
         with new_directory() as name:
             folder = Path(name)
             for i, upload in enumerate(uploads):
@@ -188,11 +235,13 @@ def run_tool(slug):
                 upload.close()
             if slug == "compress-pdf":
                 input_bytes = target.stat().st_size
-            process(slug, folder, option)
+            process(slug, folder, option, parameters)
             outputs = list(folder.glob("download.*"))
             if len(outputs) != 1 or outputs[0].is_symlink():
                 abort(422, "No valid output was produced.")
             output = outputs[0]
+            if parameters is not None and slug in {"compare-pdf", "sign-pdf"}:
+                return report_download(output, folder / "summary.json", slug)
             stream = output.open("rb")
             try:
                 response = send_file(stream, as_attachment=True, download_name=slug + output.suffix,

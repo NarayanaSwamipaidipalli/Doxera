@@ -7,6 +7,7 @@
 !app/upload_verification.py
 !app/processors/
 !app/processors/*.py
+app/processors/invoice_generator.py
 !solo/
 !solo/*.py
 !solo/requirements.txt
@@ -15,3 +16,8 @@
 !solo/static/
 !solo/static/*.css
 !solo/static/compress.js
+
+!ui/
+!ui/**
+ui/node_modules/
+ui/dist/
