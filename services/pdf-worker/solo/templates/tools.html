@@ -27,10 +27,11 @@
 </form>
 </section>
 {% else %}
-<h1>PDF tools</h1><p class="intro">Choose a tool, upload your files and download the result. No account needed.</p>
+<h1>PDF tools</h1><p class="intro">Choose a tool, upload your files and download the result.</p>
 {% for category in ['Organize','Convert','Edit','Protect'] %}
 <section><h2>{{ category }}</h2><ul class="grid">{% for slug, item in tools.items() if item.category == category %}<li><a href="{{ url_for('tool_page',slug=slug) }}">{{ item.name }} <span aria-hidden="true">↗</span></a></li>{% endfor %}</ul></section>
 {% endfor %}
+<section><h2>Coming soon</h2><ul>{% for name in coming_soon.values() %}<li>{{ name }}</li>{% endfor %}</ul></section>
 <details><summary>Unavailable tools ({{ unavailable|length }})</summary><ul>{% for name in unavailable.values() %}<li>{{ name }}</li>{% endfor %}</ul></details>
 {% endif %}
 </main>

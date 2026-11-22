@@ -1,5 +1,8 @@
 """Run inside an isolated QA client container against a real solo gunicorn instance."""
+import base64
 import http.client
+import os
+from urllib.parse import urlsplit
 import io
 import json
 import re
@@ -13,7 +16,7 @@ from PIL import Image, ImageDraw, ImageFont
 from docx import Document
 from openpyxl import Workbook, load_workbook
 from pptx import Presentation
-from solo.catalog import TOOLS, UNAVAILABLE
+from solo.catalog import TOOLS, UNAVAILABLE, COMING_SOON
 
 
 def fixture_pdf(labels):
@@ -39,8 +42,18 @@ def packed(doc):
 
 
 def call(method, path, data=None, headers=None):
-    conn = http.client.HTTPConnection(sys.argv[1], timeout=115)
-    conn.request(method, path, body=data, headers=headers or {})
+    target = urlsplit(sys.argv[1] if "://" in sys.argv[1] else "http://" + sys.argv[1])
+    if target.scheme not in {"http", "https"} or target.path not in {"", "/"} or target.username or not target.hostname:
+        raise ValueError("Supply a service origin")
+    headers = dict(headers or {})
+    password = os.environ.get("SOLO_TRIAL_PASSWORD")
+    if password:
+        if target.scheme != "https" and os.environ.get("SOLO_LOCAL_TEST") != "1":
+            raise ValueError("Trial credentials require HTTPS outside an isolated local test")
+        headers["Authorization"] = "Basic " + base64.b64encode(("owner:" + password).encode()).decode()
+    client = http.client.HTTPSConnection if target.scheme == "https" else http.client.HTTPConnection
+    conn = client(target.hostname, target.port, timeout=115)
+    conn.request(method, path, body=data, headers=headers)
     response = conn.getresponse()
     result = (response.status, dict((k.lower(),v) for k,v in response.getheaders()), response.read())
     conn.close()
@@ -159,9 +172,9 @@ def main():
         except Exception as exc:
             failures.append(slug)
             print("FAIL",slug,type(exc).__name__,str(exc)[:60] if isinstance(exc,AssertionError) else "",flush=True)
-    for slug in UNAVAILABLE:
+    for slug in (*UNAVAILABLE, *COMING_SOON):
         assert call("GET","/tools/"+slug)[0]==404 and call("POST","/tools/"+slug,b"")[0]==404
-    print("Disabled catalog routes denied:",len(UNAVAILABLE),flush=True)
+    print("Disabled catalog routes denied:",len(UNAVAILABLE) + len(COMING_SOON),flush=True)
     if failures: raise SystemExit("Failed workflows: "+", ".join(failures))
 
 

@@ -1,6 +1,6 @@
 # Doxera Solo source notices
 
-Doxera Solo application source is offered under GNU Affero General Public License version 3 only. The complete license appears in the repository root and worker directory. Original file-level notices and the project's recorded contributor credits accompany this release. The 22 November 2026 tools-only adaptation uses anonymous sessions, temporary local file handling and a single Gunicorn service. [LICENSE](LICENSE) · [CONTRIBUTORS.md](CONTRIBUTORS.md)
+Doxera Solo application source is offered under GNU Affero General Public License version 3 only. The complete license appears in the repository root and worker directory. Original file-level notices and the project's recorded contributor credits accompany this release. The 22 November 2026 tools-only adaptation uses anonymous sessions, temporary local file handling and a single Gunicorn service. The 22 November 2026 RC2 revision adds a password gate and disables Office and HTML import. [LICENSE](LICENSE) · [CONTRIBUTORS.md](CONTRIBUTORS.md)
 
 External dependencies retain their own licenses, copyrights and notices. The Docker build obtains these packages from their respective distributors. The source tag contains upstream attribution material and a record of the tested dependencies. The legal directory maps installed notice paths to byte-preserved copies named by their SHA-256. Debian copyright files may refer to named common licenses in the accompanying index.
 

@@ -5,6 +5,7 @@ services:
   - type: web
     name: doxera-solo
     runtime: docker
+    branch: solo-tools
     region: singapore
     plan: 1c-2g
     numInstances: 1
@@ -17,5 +18,9 @@ services:
         generateValue: true
       - key: SOLO_PRIVACY_EMAIL
         sync: false
-      - key: SOLO_SOURCE_URL
+      - key: SOLO_ACCESS_MODE
+        value: trial
+      - key: SOLO_TRIAL_PASSWORD
         sync: false
+      - key: SOLO_SOURCE_URL
+        value: https://github.com/NarayanaSwamipaidipalli/Doxera/archive/refs/tags/solo-v1.0.0-rc.2.tar.gz

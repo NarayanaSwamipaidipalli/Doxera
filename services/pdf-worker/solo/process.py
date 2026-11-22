@@ -56,16 +56,27 @@ def bundle(paths, result):
 def convert(tool, files, option, work):
     import pymupdf
     from PIL import Image
-    from app.upload_verification import check_format, MIME, OOXML
+    from app.upload_verification import check_format, MIME
+    from solo.catalog import TOOLS
     from app.processors import advanced_tools as advanced, basic_tools as basic, conversions as conv
     from app.processors import bates_tools, compare_tools, delete_tools, encrypt_tools, extract_tools
     from app.processors import redact_tools, reorder_tools, sign_tools, split_tools
+    entry = TOOLS.get(tool)
+    if entry is None or not entry.minimum <= len(files) <= entry.maximum:
+        raise ValueError("Unavailable tool or invalid number of files")
     for file in files:
-        ext = file.suffix[1:]
-        if ext in OOXML:
-            with zipfile.ZipFile(file) as archive:
-                if sum(m.file_size for m in archive.infolist()) > 150_000_000:
-                    raise ValueError("Office document too large when expanded")
+        ext = file.suffix[1:].lower()
+        if ext not in entry.extensions:
+            raise ValueError("Unsupported input type")
+        with file.open("rb") as stream:
+            header = stream.read(12)
+        signatures = {"pdf": b"%PDF-", "png": b"\x89PNG\r\n\x1a\n", "jpg": b"\xff\xd8\xff", "jpeg": b"\xff\xd8\xff"}
+        if ext == "webp":
+            valid_header = header.startswith(b"RIFF") and header[8:12] == b"WEBP"
+        else:
+            valid_header = ext in signatures and header.startswith(signatures[ext])
+        if not valid_header:
+            raise ValueError("Document header does not match its file type")
         check_format(str(file), file.name, MIME[ext])
         if ext == "pdf":
             with pymupdf.open(file) as pdf:
@@ -117,8 +128,6 @@ def convert(tool, files, option, work):
     elif tool == "pdf-to-powerpoint":
         result = str(work / "result.pptx")
         conv.pdf_to_ppt(first, result, mode="visual")
-    elif tool in ("word-to-pdf","excel-to-pdf","ppt-to-pdf"):
-        result = conv.office_to_pdf(first, str(work))
     elif tool == "image-to-pdf":
         conv.images_to_pdf(paths, result)
         with pymupdf.open(result) as doc:
@@ -127,11 +136,6 @@ def convert(tool, files, option, work):
     elif tool == "pdf-to-image":
         images = conv.pdf_to_images(first, str(work))
         result = images[0] if len(images) == 1 else bundle(images, work / "pages.zip")
-    elif tool == "html-to-pdf":
-        from app.processors import html_tools
-        # This process handles one job. Give the nested renderer our stricter file ceiling.
-        html_tools.MAX_OUTPUT_BYTES = min(html_tools.MAX_OUTPUT_BYTES, resource.getrlimit(resource.RLIMIT_FSIZE)[1])
-        conv.html_to_pdf(first, result)
     elif tool == "pdf-watermark":
         basic.add_watermark(first, result, text=option)
     elif tool in ("pdf-encryption","protect-pdf"):

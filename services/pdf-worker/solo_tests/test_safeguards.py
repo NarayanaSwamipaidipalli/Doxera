@@ -1,4 +1,5 @@
 """Offline tests. Run in a fresh solo test container with a private /tmp."""
+import base64
 import concurrent.futures
 import os
 from pathlib import Path
@@ -56,6 +57,7 @@ class SoloSafeguards(unittest.TestCase):
 
     def test_no_upload_without_matching_session(self):
         client = web.app.test_client()
+        client.environ_base["HTTP_AUTHORIZATION"] = "Basic " + base64.b64encode(b"owner:" + web.trial_password).decode()
         self.assertEqual(client.post("/tools/compress-pdf").status_code,403)
         client.get("/tools/compress-pdf",base_url="https://localhost")
         self.assertEqual(client.post("/tools/compress-pdf",data={"csrf":"wrong"},base_url="https://localhost").status_code,403)
@@ -67,6 +69,43 @@ class SoloSafeguards(unittest.TestCase):
         run = subprocess.run([sys.executable,"-c",code],capture_output=True)
         self.assertNotEqual(run.returncode,0)
         self.assertIn(b"Operation not permitted",run.stderr)
+
+    def test_gate_covers_site_uploads_static_and_unknown_routes(self):
+        client = web.app.test_client()
+        for path in ("/", "/static/tools.css", "/tools/merge-pdf", "/tools/word-to-pdf", "/unknown"):
+            for method in ("GET", "POST", "HEAD", "OPTIONS"):
+                response = client.open(path, method=method)
+                self.assertEqual(response.status_code, 401, (path, method))
+                self.assertIn("Basic", response.headers["WWW-Authenticate"])
+        self.assertEqual(client.get("/health").status_code, 200)
+        self.assertEqual(client.post("/health").status_code, 401)
+        for auth in (("owner","invalid"), ("other",web.trial_password.decode())):
+            self.assertEqual(client.get("/", auth=auth).status_code, 401)
+        good = ("owner", web.trial_password.decode())
+        page = client.get("/", auth=good)
+        self.assertEqual(page.status_code, 200)
+        self.assertIn(b"Coming soon", page.data)
+        from solo.catalog import COMING_SOON
+        for slug, name in COMING_SOON.items():
+            self.assertIn(name.encode(), page.data)
+            self.assertEqual(client.post("/tools/" + slug, auth=good).status_code, 404)
+
+    def test_missing_trial_password_fails_closed(self):
+        env = dict(os.environ)
+        env.pop("SOLO_TRIAL_PASSWORD", None)
+        self.assertNotEqual(subprocess.run([sys.executable,"-c","import solo.web"],env=env,capture_output=True).returncode,0)
+
+    def test_office_and_xml_disguised_as_allowed_files_are_rejected(self):
+        from solo.process import convert
+        from solo.catalog import TOOLS
+        self.assertEqual(len(TOOLS), 24)
+        self.assertEqual(set(ext for tool in TOOLS.values() for ext in tool.extensions), {"pdf","png","jpg","jpeg","webp"})
+        for ext, slug in [("pdf","compress-pdf"), ("png","image-to-pdf"), ("webp","image-to-pdf")]:
+            sample = Path(self.scratch.name) / ("sample." + ext)
+            for data in (b"<?xml version='1.0'?><sample/>", b"PK\x03\x04sample"):
+                sample.write_bytes(data)
+                with self.assertRaisesRegex(ValueError, "header"):
+                    convert(slug, [sample], "medium", Path(self.scratch.name))
 
     def test_refuses_missing_session_secret(self):
         env = dict(os.environ)

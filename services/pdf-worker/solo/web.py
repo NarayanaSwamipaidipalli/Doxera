@@ -15,9 +15,9 @@ import tempfile
 from datetime import timedelta
 from urllib.parse import urlsplit
 
-from flask import Flask, Request, abort, render_template, request, send_file, session
+from flask import Flask, Request, Response, abort, render_template, request, send_file, session
 from werkzeug.exceptions import RequestEntityTooLarge
-from solo.catalog import TOOLS, UNAVAILABLE
+from solo.catalog import TOOLS, UNAVAILABLE, COMING_SOON
 from solo.storage import limit_ip, private_root, new_directory
 
 FILE_LIMIT = 50_000_000  # Decimal MB, as displayed to users.
@@ -54,6 +54,28 @@ if contact and not re.fullmatch(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", contact, re.A
 app.config["PRIVACY_EMAIL"] = contact
 
 
+access_mode = os.environ.get("SOLO_ACCESS_MODE", "trial")
+if access_mode not in {"trial", "public"}:
+    raise RuntimeError("SOLO_ACCESS_MODE must be trial or public")
+trial_password = os.environ.get("SOLO_TRIAL_PASSWORD", "").encode()
+if access_mode == "trial" and len(trial_password) < 24:
+    raise RuntimeError("Supply a random SOLO_TRIAL_PASSWORD of at least 24 bytes")
+
+
+@app.before_request
+def trial_gate():
+    if access_mode == "public" or (request.endpoint == "health" and request.method in {"GET", "HEAD"}):
+        return None
+    credentials = request.authorization
+    if credentials and credentials.type == "basic":
+        user_ok = hmac.compare_digest((credentials.username or "").encode(), b"owner")
+        password_ok = hmac.compare_digest((credentials.password or "").encode(), trial_password)
+        if user_ok and password_ok:
+            return None
+    return Response("Authentication required.", status=401,
+                    headers={"WWW-Authenticate": 'Basic realm="Doxera trial", charset="UTF-8"'})
+
+
 @app.after_request
 def headers(response):
     response.headers.update({"Cache-Control":"private, no-store", "X-Content-Type-Options":"nosniff",
@@ -68,7 +90,7 @@ def health():
 
 @app.get("/")
 def home():
-    return render_template("tools.html", tools=TOOLS, unavailable=UNAVAILABLE)
+    return render_template("tools.html", tools=TOOLS, unavailable=UNAVAILABLE, coming_soon=COMING_SOON)
 
 
 @app.get("/tools/<slug>")

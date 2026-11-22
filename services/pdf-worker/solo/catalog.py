@@ -25,12 +25,8 @@ TOOLS = {
     "pdf-to-word": Tool("PDF to Word", "Convert"),
     "pdf-to-excel": Tool("PDF to Excel", "Convert", hint="Extract tables and text into an XLSX workbook."),
     "pdf-to-powerpoint": Tool("PDF to PowerPoint", "Convert", hint="Place each page on its own slide."),
-    "word-to-pdf": Tool("Word to PDF", "Convert", ("docx",)),
-    "excel-to-pdf": Tool("Excel to PDF", "Convert", ("xlsx",)),
-    "ppt-to-pdf": Tool("PowerPoint to PDF", "Convert", ("pptx",)),
     "image-to-pdf": Tool("Images to PDF", "Convert", ("png","jpg","jpeg","webp"), maximum=8),
     "pdf-to-image": Tool("PDF to PNG", "Convert", hint="Download a PNG per page at 200 DPI."),
-    "html-to-pdf": Tool("HTML to PDF", "Convert", ("html","htm"), hint="External resources are blocked. Embed needed images in the file."),
     "pdf-watermark": Tool("Watermark PDF", "Edit", prompt="Watermark text"),
     "pdf-encryption": Tool("Encrypt PDF", "Protect", prompt="New password", hint="Use at least 8 characters for AES-256 encryption."),
     "protect-pdf": Tool("Password protect PDF", "Protect", prompt="New password", hint="Use at least 8 characters for AES-256 encryption."),
@@ -44,6 +40,13 @@ TOOLS = {
     "pdf-repair": Tool("Repair PDF", "Edit"),
     "ocr-pdf": Tool("Make scans searchable", "Convert", prompt="Document language", choices=("eng","deu","fra","spa","jpn")),
     "batch-processing": Tool("Batch compress PDFs", "Organize", minimum=2, maximum=8, hint="Compress each PDF separately and download a ZIP."),
+}
+
+COMING_SOON = {
+    "word-to-pdf": "Word to PDF",
+    "excel-to-pdf": "Excel to PDF",
+    "ppt-to-pdf": "PowerPoint to PDF",
+    "html-to-pdf": "HTML to PDF",
 }
 
 UNAVAILABLE = {
