@@ -185,4 +185,10 @@ if __name__ == "__main__":
     restrict_process()
     work = Path.cwd()
     request = json.load(sys.stdin)
-    convert(request["tool"], sorted(work.glob("input-*")), request["option"], work)
+    from app.processors.basic_tools import CompressionFailed, CompressionNotSmaller
+    try:
+        convert(request["tool"], sorted(work.glob("input-*")), request["option"], work)
+    except CompressionNotSmaller:
+        sys.exit(3)
+    except CompressionFailed:
+        sys.exit(4)

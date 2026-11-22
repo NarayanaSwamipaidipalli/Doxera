@@ -2,6 +2,7 @@ import fcntl
 import hmac
 import ipaddress
 import json
+import logging
 import os
 from pathlib import Path
 import re
@@ -19,6 +20,8 @@ from flask import Flask, Request, Response, abort, render_template, request, sen
 from werkzeug.exceptions import RequestEntityTooLarge
 from solo.catalog import TOOLS, UNAVAILABLE, COMING_SOON
 from solo.storage import limit_ip, private_root, new_directory
+
+logger = logging.getLogger("gunicorn.error")
 
 FILE_LIMIT = 50_000_000  # Decimal MB, as displayed to users.
 
@@ -47,6 +50,9 @@ trusted = [ipaddress.ip_network(value.strip()) for value in os.getenv("SOLO_TRUS
 source = os.getenv("SOLO_SOURCE_URL", "")
 if source and (urlsplit(source).scheme != "https" or not urlsplit(source).hostname or urlsplit(source).username):
     raise RuntimeError("Use an approved HTTPS source URL")
+render_commit = os.environ.get("RENDER_GIT_COMMIT", "")
+if re.fullmatch(r"[0-9a-f]{40}", render_commit) and source.startswith("https://github.com/NarayanaSwamipaidipalli/Doxera/archive/"):
+    source = f"https://github.com/NarayanaSwamipaidipalli/Doxera/archive/{render_commit}.tar.gz"
 app.config["SOURCE_URL"] = source
 contact = os.getenv("SOLO_PRIVACY_EMAIL", "")
 if contact and not re.fullmatch(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", contact, re.ASCII):
@@ -79,7 +85,7 @@ def trial_gate():
 @app.after_request
 def headers(response):
     response.headers.update({"Cache-Control":"private, no-store", "X-Content-Type-Options":"nosniff",
-        "Referrer-Policy":"no-referrer","Content-Security-Policy":"default-src 'none'; style-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"})
+        "Referrer-Policy":"no-referrer","Content-Security-Policy":"default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"})
     return response
 
 
@@ -120,8 +126,18 @@ def process(slug, folder, option):
         except subprocess.TimeoutExpired:
             os.killpg(child.pid, signal.SIGKILL)
             child.wait()
+            if slug in {"compress-pdf", "batch-processing"}:
+                logger.warning("compression level=%s reason=timeout", option or "medium")
             abort(422, "Conversion exceeded the time limit. Try a smaller file.")
+        if slug in {"compress-pdf", "batch-processing"} and child.returncode in {3, 4}:
+            reason = "no_size_reduction" if child.returncode == 3 else "pdf_rewrite_failed"
+            logger.warning("compression level=%s engine=PyMuPDF reason=%s", option or "medium", reason)
+            if child.returncode == 3:
+                abort(422, "Compression could not make the PDF smaller at this level. Keep your original file or try High.")
+            abort(422, "The PDF could not be rewritten. Your original file is unchanged.")
         if child.returncode:
+            if slug == "compress-pdf":
+                logger.warning("compression level=%s reason=worker_exit exit=%d", option, child.returncode)
             abort(422, "Conversion failed. Check the document type, page selection or password, or try a smaller file.")
 
 
@@ -170,6 +186,8 @@ def run_tool(slug):
                 target = folder / f"input-{i}.{extension}"
                 upload.save(target)
                 upload.close()
+            if slug == "compress-pdf":
+                input_bytes = target.stat().st_size
             process(slug, folder, option)
             outputs = list(folder.glob("download.*"))
             if len(outputs) != 1 or outputs[0].is_symlink():
@@ -180,6 +198,11 @@ def run_tool(slug):
                 response = send_file(stream, as_attachment=True, download_name=slug + output.suffix,
                                      conditional=False, etag=False)
                 response.content_length = os.fstat(stream.fileno()).st_size
+                if slug == "compress-pdf":
+                    response.headers["X-Original-Bytes"] = str(input_bytes)
+                    response.headers["X-Compression-Level"] = option
+                    logger.info("compression level=%s engine=PyMuPDF before=%d after=%d",
+                                option, input_bytes, response.content_length)
             except BaseException:
                 stream.close()
                 raise

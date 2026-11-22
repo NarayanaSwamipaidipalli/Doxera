@@ -4,6 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{ tool.name if tool else 'PDF tools' }} · Doxera</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='tools.css') }}">
+{% if slug == 'compress-pdf' %}<script defer src="{{ url_for('static', filename='compress.js') }}"></script>{% endif %}
 </head>
 <body>
 <header><a class="brand" href="/">Doxera</a><a href="#privacy">File privacy</a></header>
@@ -25,6 +26,10 @@
 {% else %}<input id="option" name="option" maxlength="500" required type="{{ 'password' if 'password' in tool.prompt|lower else 'text' }}" autocomplete="off">{% endif %}{% endif %}
 <button type="submit">Process and download</button>
 </form>
+{% if slug == 'compress-pdf' %}
+<p id="compression-status" role="status"></p>
+<a id="compressed-download" download="compressed.pdf" hidden>Download compressed PDF</a>
+{% endif %}
 </section>
 {% else %}
 <h1>PDF tools</h1><p class="intro">Choose a tool, upload your files and download the result.</p>

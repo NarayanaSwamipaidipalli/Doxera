@@ -13,12 +13,12 @@ read -rs -p "Trial password (at least 24 characters): " SOLO_TRIAL_PASSWORD
 echo
 export SOLO_TRIAL_PASSWORD
 export SOLO_PRIVACY_EMAIL='roughnarayana@gmail.com'
-export SOLO_SOURCE_URL='https://github.com/NarayanaSwamipaidipalli/Doxera/archive/refs/tags/solo-v1.0.0-rc.2.tar.gz'
+export SOLO_SOURCE_URL="https://github.com/NarayanaSwamipaidipalli/Doxera/archive/$(git rev-parse HEAD).tar.gz"
 docker run --rm --name doxera-solo --cpus 1 --memory 2g --memory-swap 2g \
   -p 127.0.0.1:10000:10000 -e SOLO_TRIAL_PASSWORD -e SOLO_SESSION_SECRET -e SOLO_PRIVACY_EMAIL -e SOLO_SOURCE_URL doxera-solo:rc2
 ```
 
-Open localhost on port 10000 and sign in as `owner` with your trial password. The health endpoint is `/health`. Render provides HTTPS for the deployed service. Select `render.solo.yaml` and the `solo-tools` branch when using a Render Blueprint. Enter the privacy email and trial password when prompted. The Blueprint sets the source URL and selects trial access. A missing trial password prevents startup. The Blueprint generates the signing secret. The temporary service storage is private to the running instance. Uploaded files are limited to 50 MB each. Results are streamed once. Normal completion removes the file paths immediately and the orphan sweeper runs before one hour.
+Open localhost on port 10000 and sign in as `owner` with your trial password. The health endpoint is `/health`. Render provides HTTPS for the deployed service. Select `render.solo.yaml` and the `solo-tools` branch when using a Render Blueprint. Enter the privacy email and trial password when prompted. The Blueprint selects trial access. On Render the source link points to the exact deployed Git commit. A missing trial password prevents startup. The Blueprint generates the signing secret. The temporary service storage is private to the running instance. Uploaded files are limited to 50 MB each. Results are streamed once. Normal completion removes the file paths immediately and the orphan sweeper runs before one hour.
 
 ## Verify with synthetic documents
 

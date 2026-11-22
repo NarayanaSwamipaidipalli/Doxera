@@ -1,8 +1,6 @@
 import os
-import io
 from typing import List, Optional, Dict, Any, Union
 import pymupdf
-from PIL import Image
 from .delete_navigation import delete_pages_with_bookmarks
 
 def parse_page_indices(raw: Any, preserve_order: bool = False) -> List[int]:
@@ -116,67 +114,38 @@ def split_pdf(input_path: str, output_path: str, page_ranges: Any = None) -> str
     result_doc.close()
     return output_path
 
+class CompressionNotSmaller(Exception):
+    """No smaller, valid download could be produced at the selected level."""
+
+
+class CompressionFailed(Exception):
+    """The PDF image rewriter or final save failed."""
+
+
 def compress_pdf(input_path: str, output_path: str, level: str = "medium") -> str:
-    """
-    Compresses PDF using vector garbage collection, stream deflation,
-    and genuine image resolution downsampling.
-    """
-    doc = pymupdf.open(input_path)
-    
-    quality = 75
-    max_dim = 1600
-    if level in ["high", "extreme"]:
-        quality = 50
-        max_dim = 1000
-    elif level == "low":
-        quality = 85
-        max_dim = 2000
-
-    # Downsample and recompress embedded images
-    for page in doc:
-        image_list = page.get_images(full=True)
-        for img_info in image_list:
-            xref = img_info[0]
-            try:
-                base_image = doc.extract_image(xref)
-                if not base_image:
-                    continue
-                image_bytes = base_image.get("image")
-                if not image_bytes:
-                    continue
-                
-                with Image.open(io.BytesIO(image_bytes)) as pil_img:
-                    # Check if resizing is needed
-                    orig_w, orig_h = pil_img.size
-                    if orig_w > max_dim or orig_h > max_dim:
-                        scale = min(max_dim / orig_w, max_dim / orig_h)
-                        new_w = max(1, int(orig_w * scale))
-                        new_h = max(1, int(orig_h * scale))
-                        pil_img = pil_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
-                    
-                    if pil_img.mode in ("RGBA", "P"):
-                        pil_img = pil_img.convert("RGB")
-                    
-                    out_buffer = io.BytesIO()
-                    pil_img.save(out_buffer, format="JPEG", quality=quality, optimize=True)
-                    compressed_bytes = out_buffer.getvalue()
-                    
-                    # Only replace if actually smaller
-                    if len(compressed_bytes) < len(image_bytes):
-                        doc.replace_image(xref, stream=compressed_bytes)
-            except Exception:
-                continue
-
-    doc.save(
-        output_path,
-        garbage=4,
-        deflate=True,
-        deflate_images=True,
-        deflate_fonts=True,
-        clean=True
-    )
-    doc.close()
+    # DPI is measured at the size used on the PDF page. Keep text, vectors and bitonal scans.
+    profiles = {"low": (300, 85), "medium": (200, 75), "high": (150, 60), "extreme": (150, 60)}
+    dpi, quality = profiles[level]
+    try:
+        with pymupdf.open(input_path) as doc:
+            # The default averaging filter only shrinks by powers of two. Bicubic
+            # resampling respects the physical target even for e.g. 400 -> 150 DPI.
+            options = pymupdf.mupdf.PdfImageRewriterOptions()
+            for family in ("color_lossy", "color_lossless", "gray_lossy", "gray_lossless"):
+                prefix = family + "_image_"
+                setattr(options, prefix + "subsample_method", pymupdf.mupdf.FZ_SUBSAMPLE_BICUBIC)
+                setattr(options, prefix + "subsample_threshold", dpi + 1)
+                setattr(options, prefix + "subsample_to", dpi)
+                setattr(options, prefix + "recompress_method", pymupdf.mupdf.FZ_RECOMPRESS_JPEG)
+                setattr(options, prefix + "recompress_quality", str(quality))
+            doc.rewrite_images(options=options)
+            doc.save(output_path, garbage=4, deflate=True, use_objstms=1)
+    except Exception as exc:
+        raise CompressionFailed() from exc
+    if os.path.getsize(output_path) >= os.path.getsize(input_path):
+        raise CompressionNotSmaller()
     return output_path
+
 
 def rotate_pdf(input_path: str, output_path: str, degrees: int = 90, pages: Any = None) -> str:
     """Rotates all or specified pages in the PDF by 90, 180, or 270 degrees."""
