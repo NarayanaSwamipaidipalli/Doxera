@@ -58,6 +58,10 @@ class ParserBoundary(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Hosting logs", response.data)
         self.assertIn(b"one hour", response.data)
+        self.assertIn(b"Paidipalem Narayana Swamy", response.data)
+        self.assertIn(b'<time datetime="2026-11-22">22 November 2026</time>', response.data)
+        self.assertIn(b"7 days", response.data)
+        self.assertIn(f"mailto:{web.app.config['PRIVACY_EMAIL']}".encode(), response.data)
 
     def test_ruled_table_cells_survive_without_layout_model(self):
         import csv

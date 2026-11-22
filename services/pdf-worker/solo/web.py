@@ -53,7 +53,7 @@ app.config["SOURCE_URL"] = (
     f"https://github.com/NarayanaSwamipaidipalli/Doxera/archive/{source_revision}.tar.gz"
     if source_revision else "https://github.com/NarayanaSwamipaidipalli/Doxera/archive/refs/tags/solo-v1.0.0-rc.4.tar.gz"
 )
-contact = os.getenv("SOLO_PRIVACY_EMAIL", "")
+contact = os.getenv("SOLO_PRIVACY_EMAIL") or "roughnarayana@gmail.com"
 if contact and not re.fullmatch(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", contact, re.ASCII):
     raise RuntimeError("Use a valid public privacy email address")
 app.config["PRIVACY_EMAIL"] = contact
