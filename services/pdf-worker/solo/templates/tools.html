@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ tool.name if tool else 'PDF tools' }} · Doxera</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='tools.css') }}">
+</head>
+<body>
+<header><a class="brand" href="/">Doxera</a><a href="#privacy">File privacy</a></header>
+<main>
+{% if error %}
+<section class="sheet"><h1>Request stopped</h1><p role="alert">{{ error }}</p><a href="/">Choose a tool</a></section>
+{% elif tool %}
+<nav aria-label="Breadcrumb"><a href="/">PDF tools</a> / {{ tool.category }}</nav>
+<section class="sheet">
+<h1>{{ tool.name }}</h1>
+{% if tool.hint %}<p>{{ tool.hint }}</p>{% endif %}
+<form method="post" enctype="multipart/form-data">
+<input type="hidden" name="csrf" value="{{ session.csrf }}">
+<label for="files">Choose {{ 'files' if tool.maximum > 1 else 'a file' }}</label>
+<input id="files" name="files" type="file" {% if tool.maximum > 1 %}multiple{% endif %} required accept="{% for ext in tool.extensions %}.{{ ext }}{{ ',' if not loop.last }}{% endfor %}" aria-describedby="limits">
+<small id="limits">{{ tool.extensions|join(', ')|upper }} · 50 MB per file · 100 MB total · Up to 150 pages per PDF</small>
+{% if tool.prompt %}<label for="option">{{ tool.prompt }}</label>
+{% if tool.choices %}<select id="option" name="option">{% for value in tool.choices %}<option>{{ value }}</option>{% endfor %}</select>
+{% else %}<input id="option" name="option" maxlength="500" required type="{{ 'password' if 'password' in tool.prompt|lower else 'text' }}" autocomplete="off">{% endif %}{% endif %}
+<button type="submit">Process and download</button>
+</form>
+</section>
+{% else %}
+<h1>PDF tools</h1><p class="intro">Choose a tool, upload your files and download the result. No account needed.</p>
+{% for category in ['Organize','Convert','Edit','Protect'] %}
+<section><h2>{{ category }}</h2><ul class="grid">{% for slug, item in tools.items() if item.category == category %}<li><a href="{{ url_for('tool_page',slug=slug) }}">{{ item.name }} <span aria-hidden="true">↗</span></a></li>{% endfor %}</ul></section>
+{% endfor %}
+<details><summary>Unavailable tools ({{ unavailable|length }})</summary><ul>{% for name in unavailable.values() %}<li>{{ name }}</li>{% endfor %}</ul></details>
+{% endif %}
+</main>
+<footer id="privacy"><h2>File privacy</h2><p>Uploads and results use temporary storage and are automatically deleted within one hour. We normally remove the files before sending your download. Keep your downloaded copy if you need it again.</p>
+{% if config.PRIVACY_EMAIL %}<p>Privacy contact <a href="mailto:{{ config.PRIVACY_EMAIL }}">{{ config.PRIVACY_EMAIL }}</a></p>{% endif %}
+{% if config.SOURCE_URL %}<a href="{{ config.SOURCE_URL }}">Source code for this version</a>{% endif %}</footer>
+</body></html>

@@ -1,0 +1,16 @@
+**
+!LICENSE
+!app/
+!app/__init__.py
+!app/config.py
+!app/scratch.py
+!app/upload_verification.py
+!app/processors/
+!app/processors/*.py
+!solo/
+!solo/*.py
+!solo/requirements.txt
+!solo/templates/
+!solo/templates/*.html
+!solo/static/
+!solo/static/*.css

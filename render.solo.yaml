@@ -1,0 +1,21 @@
+# Choose this path explicitly. The account-based application has separate Blueprints.
+previews:
+  generation: 'off'
+services:
+  - type: web
+    name: doxera-solo
+    runtime: docker
+    region: singapore
+    plan: 1c-2g
+    numInstances: 1
+    autoDeployTrigger: 'off'
+    dockerContext: ./services/pdf-worker
+    dockerfilePath: ./services/pdf-worker/Dockerfile.solo
+    healthCheckPath: /health
+    envVars:
+      - key: SOLO_SESSION_SECRET
+        generateValue: true
+      - key: SOLO_PRIVACY_EMAIL
+        sync: false
+      - key: SOLO_SOURCE_URL
+        sync: false

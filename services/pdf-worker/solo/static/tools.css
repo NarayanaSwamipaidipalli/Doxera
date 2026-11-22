@@ -1,0 +1,21 @@
+* { box-sizing: border-box }
+:root { color-scheme: light; font-family: Inter, "Segoe UI", sans-serif; color: #182731; background: #f7f8f6; }
+body { margin: 0 }
+header, main, footer { max-width: 68rem; margin: auto; padding: 1.5rem clamp(1rem,5vw,4rem) }
+header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cdd5d1 }
+a { color: #174f48; text-underline-offset: .2em }
+.brand { font-size: 1.6rem; font-weight: 750; letter-spacing: -.06em; color: #182731; text-decoration: none }
+h1 { font-size: clamp(2.5rem,6vw,4.8rem); line-height: 1.05; letter-spacing: -.055em; margin: .6em 0 .25em }
+h2 { font-size: 1.3rem; letter-spacing: -.025em; margin: 1.8em 0 .7em }
+p, small { line-height: 1.6; max-width: 63ch }
+.intro { color: #42544f; font-size: 1.125rem }
+.grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,14rem),1fr)); gap: .5rem; padding: 0 }
+.grid a { display: flex; justify-content: space-between; align-items: center; gap: .5rem; background: #fff; border: 1px solid #cbd4d0; border-radius: .45rem; padding: 1rem; color: #192b25; font-weight: 600; text-decoration: none; min-height: 3.5rem }
+.grid a:hover { background: #e7f4ee; border-color: #497768 }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid #126bad; outline-offset: 2px }
+details { margin: 2rem 0 } summary { cursor: pointer }
+.sheet { max-width: 42rem } nav { color: #47584e; margin-top: 1rem }
+form { display: grid; gap: .65rem; padding: clamp(1rem,4vw,2rem); background: white; border: 1px solid #cbd4d0; border-radius: .6rem; margin: 1.6rem 0 }
+label { font-weight: 650 } input, select, button { font: inherit; padding: .7rem; border-radius: .35rem; max-width: 100% }
+input, select { border: 1px solid #798c83; width: 100% } button { justify-self: start; margin-top: .7rem; background: #195647; color: white; border: 0; cursor: pointer }
+footer { border-top: 1px solid #cdd5d1; margin-top: 2rem } footer h2 { margin-top: 0 } footer p { font-size: .95rem }

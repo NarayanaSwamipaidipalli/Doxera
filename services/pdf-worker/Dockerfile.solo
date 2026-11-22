@@ -1,0 +1,25 @@
+FROM python:3.11-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 OMP_THREAD_LIMIT=1 OPENBLAS_NUM_THREADS=1 HOME=/tmp
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libreoffice-writer libreoffice-calc libreoffice-impress \
+    tesseract-ocr tesseract-ocr-eng tesseract-ocr-deu tesseract-ocr-fra tesseract-ocr-spa tesseract-ocr-jpn \
+    fonts-dejavu-core fonts-liberation libharfbuzz-subset0 \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --no-create-home --uid 10001 solo
+COPY solo/requirements.txt /app/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip python -m pip install -r /app/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -c "import ctypes; ctypes.CDLL('libseccomp.so.2')" \
+    && python -m pip install --upgrade pip==26.3 setuptools==84.2.1 \
+    && python -m pip check
+# Refresh vulnerable base libraries independently of the large Office dependency layer.
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --only-upgrade libc6 libc-bin zlib1g \
+    && rm -rf /var/lib/apt/lists/*
+COPY app /app/app
+COPY solo /app/solo
+COPY LICENSE /app/LICENSE
+USER 10001:10001
+ENV PORT=10000
+CMD ["sh", "-c", "exec gunicorn --config /app/solo/gunicorn.conf.py --bind 0.0.0.0:${PORT:-10000} --timeout 120 solo.web:app"]
