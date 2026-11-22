@@ -44,7 +44,7 @@ async function main() {
       await page
         .getByRole("link", { name: "Source code for this version" })
         .getAttribute("href"),
-      /solo-v1\.0\.0-rc\.3\.tar\.gz$/,
+      /\/archive\/[0-9a-f]{40}\.tar\.gz$/,
     );
     assert.equal(
       await page.locator('a[href^="mailto:"]').getAttribute("href"),

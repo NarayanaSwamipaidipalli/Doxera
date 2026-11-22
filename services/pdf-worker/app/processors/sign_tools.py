@@ -239,14 +239,13 @@ def _decode_signature_image(data_url) -> bytes:
         raise UserFacingError("The signature image could not be read.") from None
     if len(raw) > MAX_IMAGE_BYTES:
         raise UserFacingError("The signature image is too large. Use an image under 300 KB.")
+    formats = (match.group(1).upper(),)
     try:
-        with Image.open(io.BytesIO(raw)) as probe:
-            if probe.format not in ("PNG", "JPEG"):
-                raise ValueError("format")
+        with Image.open(io.BytesIO(raw), formats=formats) as probe:
             if max(probe.size) > MAX_IMAGE_SIDE:
                 raise UserFacingError("The signature image is too large. Use one at most 2400 pixels wide.")
             probe.verify()
-        with Image.open(io.BytesIO(raw)) as image:
+        with Image.open(io.BytesIO(raw), formats=formats) as image:
             image = image.convert("RGBA")
     except UserFacingError:
         raise

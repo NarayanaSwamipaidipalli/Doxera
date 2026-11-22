@@ -1,23 +1,23 @@
 # Doxera Solo
 
-This source release runs 24 PDF tools behind an owner-only HTTP Basic gate on a single Linux web service. Word, Excel, PowerPoint and HTML imports display Coming soon. Seven earlier catalog entries remain unavailable. Accepted upload types are PDF, PNG, JPEG and WebP. This release candidate is for synthetic testing while the native parser security review is open.
+This source release runs 24 PDF tools behind an owner-only HTTP Basic gate on a single Linux web service. Word, Excel, PowerPoint and HTML imports display Coming soon. Seven earlier catalog entries remain unavailable. Accepted upload types are PDF, PNG, JPEG and WebP. This release candidate is for synthetic testing pending hosted verification of the patched native PDF library.
 
 ## Build and run
 
 Run these commands in Bash from the repository root on a machine with Docker. Generate a unique trial password in your password manager.
 
 ```sh
-docker build --file services/pdf-worker/Dockerfile.solo --tag doxera-solo:rc3 services/pdf-worker
+docker build --file services/pdf-worker/Dockerfile.solo --tag doxera-solo:rc4 services/pdf-worker
 export SOLO_SESSION_SECRET="$(openssl rand -hex 32)"
 read -rs -p "Trial password (at least 24 characters): " SOLO_TRIAL_PASSWORD
 echo
 export SOLO_TRIAL_PASSWORD
 export SOLO_PRIVACY_EMAIL='roughnarayana@gmail.com'
 docker run --rm --name doxera-solo --cpus 1 --memory 2g --memory-swap 2g \
-  -p 127.0.0.1:10000:10000 -e SOLO_TRIAL_PASSWORD -e SOLO_SESSION_SECRET -e SOLO_PRIVACY_EMAIL doxera-solo:rc3
+  -p 127.0.0.1:10000:10000 -e SOLO_TRIAL_PASSWORD -e SOLO_SESSION_SECRET -e SOLO_PRIVACY_EMAIL doxera-solo:rc4
 ```
 
-Open localhost on port 10000 and sign in as `owner` with your trial password. The health endpoint is `/health`. Render provides HTTPS for the deployed service. Select `render.solo.yaml` and the `solo-tools` branch when using a Render Blueprint. Enter the privacy email and trial password when prompted. The Blueprint selects trial access. On Render the source link points to the [RC3 source archive](https://github.com/NarayanaSwamipaidipalli/Doxera/archive/refs/tags/solo-v1.0.0-rc.3.tar.gz). A missing trial password prevents startup. The Blueprint generates the signing secret. The temporary service storage is private to the running instance. Uploaded files are limited to 50 MB each. Results are streamed once. Normal completion removes the file paths immediately and the orphan sweeper runs before one hour.
+Open localhost on port 10000 and sign in as `owner` with your trial password. The health endpoint is `/health`. Render provides HTTPS for the deployed service. Select `render.solo.yaml` and the `solo-tools` branch when using a Render Blueprint. Enter the privacy email and trial password when prompted. The Blueprint selects trial access. On Render the source link downloads the running Git commit. The tagged release is the [RC4 source archive](https://github.com/NarayanaSwamipaidipalli/Doxera/archive/refs/tags/solo-v1.0.0-rc.4.tar.gz). A missing trial password prevents startup. The Blueprint generates the signing secret. The temporary service storage is private to the running instance. Uploaded files are limited to 50 MB each. Results are streamed once. Normal completion removes the file paths immediately and the orphan sweeper runs before one hour.
 
 ## Verify with synthetic documents
 
@@ -25,7 +25,7 @@ The regression fixtures are generated at test time. Make `services/pdf-worker/so
 
 ```sh
 docker run --rm --network none -e SOLO_TRIAL_PASSWORD -e SOLO_SESSION_SECRET -e PYTHONPATH=/app \
-  -v "$PWD/services/pdf-worker/solo_tests:/qa:ro" doxera-solo:rc3 \
+  -v "$PWD/services/pdf-worker/solo_tests:/qa:ro" doxera-solo:rc4 \
   python -m unittest discover -s /qa
 ```
 

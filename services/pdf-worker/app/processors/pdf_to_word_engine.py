@@ -120,7 +120,7 @@ def ocr_page_to_searchable_doc(page: pymupdf.Page, lang: str = "eng", dpi: int =
         pix = page.get_pixmap(dpi=dpi)
         img_bytes = pix.tobytes("png")
         del pix
-        pil_img = Image.open(io.BytesIO(img_bytes))
+        pil_img = Image.open(io.BytesIO(img_bytes), formats=("PNG",))
         
         pdf_bytes = pytesseract.image_to_pdf_or_hocr(pil_img, extension='pdf', lang=lang)
         del pil_img
@@ -207,6 +207,21 @@ def convert_with_pdf2docx_engine(input_path: str, output_path: str, config: Conv
         return False
 
 
+def _word_picture(record):
+    """Normalize embedded PDF image formats that Word cannot display to PNG."""
+    from PIL import Image
+    image = record["image"]
+    if not 0 < record["width"] * record["height"] <= 24_000_000:
+        raise ValueError("Embedded image exceeds the conversion limit")
+    if record.get("ext", "").lower() not in {"png", "jpeg", "jpg"}:
+        pix = pymupdf.Pixmap(image)
+        if pix.colorspace and pix.colorspace.n > 3:
+            pix = pymupdf.Pixmap(pymupdf.csRGB, pix)
+        image = pix.tobytes("png")
+    with Image.open(io.BytesIO(image), formats=("JPEG", "PNG")) as picture:
+        return image, picture.width, picture.height
+
+
 def convert_with_native_pipeline(input_path: str, output_path: str, config: ConversionConfig) -> str:
     """
     Enterprise-grade native fallback converter:
@@ -257,7 +272,7 @@ def convert_with_native_pipeline(input_path: str, output_path: str, config: Conv
         # 3. Extract Tables
         table_rects = []
         try:
-            tabs = page.find_tables()
+            tabs = page.find_tables(use_layout=False)
             for tab in tabs:
                 table_rects.append(tab.bbox)
                 t_data = tab.extract()
@@ -390,23 +405,22 @@ def convert_with_native_pipeline(input_path: str, output_path: str, config: Conv
                 try:
                     img_bytes = b.get("image")
                     if img_bytes:
-                        with Image.open(io.BytesIO(img_bytes)) as pil_img:
-                            orig_w, orig_h = pil_img.size
-                            aspect = orig_h / max(1, orig_w)
-                            
-                            # Scale to document width
-                            target_w = min(usable_width, b["bbox"][2] - b["bbox"][0])
-                            if target_w < 40:
-                                target_w = min(usable_width, orig_w * 0.75)
-                            target_h = target_w * aspect
-                            
-                            # Embed in Word
-                            img_stream = io.BytesIO(img_bytes)
-                            p_img = doc.add_paragraph()
-                            p_img.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                            p_img.paragraph_format.space_before = Pt(4)
-                            p_img.paragraph_format.space_after = Pt(6)
-                            p_img.add_run().add_picture(img_stream, width=Pt(target_w), height=Pt(target_h))
+                        img_bytes, orig_w, orig_h = _word_picture(b)
+                        aspect = orig_h / max(1, orig_w)
+
+                        # Scale to document width
+                        target_w = min(usable_width, b["bbox"][2] - b["bbox"][0])
+                        if target_w < 40:
+                            target_w = min(usable_width, orig_w * 0.75)
+                        target_h = target_w * aspect
+
+                        # Embed in Word
+                        img_stream = io.BytesIO(img_bytes)
+                        p_img = doc.add_paragraph()
+                        p_img.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                        p_img.paragraph_format.space_before = Pt(4)
+                        p_img.paragraph_format.space_after = Pt(6)
+                        p_img.add_run().add_picture(img_stream, width=Pt(target_w), height=Pt(target_h))
                 except Exception as img_err:
                     logger.warning(f"Failed to embed native image block: {img_err}")
 
@@ -422,19 +436,18 @@ def convert_with_native_pipeline(input_path: str, output_path: str, config: Conv
                     if not image_bytes or len(image_bytes) < 1024:
                         continue  # Skip tiny icons / decorative artifacts
                         
-                    with Image.open(io.BytesIO(image_bytes)) as pil_img:
-                        w, h = pil_img.size
-                        if w < 50 or h < 50:
-                            continue
-                            
-                        # Scale safely
-                        max_w_pt = min(usable_width * 0.8, w * 0.75)
-                        max_h_pt = max_w_pt * (h / w)
-                        
-                        img_stream = io.BytesIO(image_bytes)
-                        p_img = doc.add_paragraph()
-                        p_img.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                        p_img.add_run().add_picture(img_stream, width=Pt(max_w_pt), height=Pt(max_h_pt))
+                    image_bytes, w, h = _word_picture(base_image)
+                    if w < 50 or h < 50:
+                        continue
+
+                    # Scale safely
+                    max_w_pt = min(usable_width * 0.8, w * 0.75)
+                    max_h_pt = max_w_pt * (h / w)
+
+                    img_stream = io.BytesIO(image_bytes)
+                    p_img = doc.add_paragraph()
+                    p_img.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    p_img.add_run().add_picture(img_stream, width=Pt(max_w_pt), height=Pt(max_h_pt))
             except Exception as e:
                 logger.warning(f"Standalone image extraction warning on page {page_idx}: {e}")
 

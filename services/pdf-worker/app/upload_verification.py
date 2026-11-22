@@ -70,7 +70,7 @@ def valid_office_package(path, ext):
         }
 
 
-def check_format(path, filename, mime):
+def check_format(path, filename, mime, *, max_image_pixels=None):
     ext = Path(filename).suffix.lower().lstrip(".")
     if MIME.get(ext) != mime:
         raise InvalidUpload("Filename and content type disagree")
@@ -79,7 +79,9 @@ def check_format(path, filename, mime):
             with pymupdf.open(path) as doc:
                 valid = doc.is_pdf and doc.page_count > 0
         elif ext in IMAGE_FORMATS:
-            with Image.open(path) as image:
+            with Image.open(path, formats=(IMAGE_FORMATS[ext],)) as image:
+                if max_image_pixels is not None and image.width * image.height > max_image_pixels:
+                    raise InvalidUpload("Image dimensions too large")
                 valid = image.format == IMAGE_FORMATS[ext]
                 image.verify()
         elif ext in OOXML:

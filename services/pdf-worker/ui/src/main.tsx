@@ -85,6 +85,7 @@ function App() {
             {root.dataset.source && (
               <a href={root.dataset.source}>Source code for this version</a>
             )}
+            <a href="/terms-and-privacy">Terms and privacy</a>
             <a href="/static/ui/licenses.txt">Third-party notices</a>
           </div>
         </div>

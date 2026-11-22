@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Terms and privacy · Doxera</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='tools.css') }}">
+</head><body>
+<header><a class="brand" href="/">Doxera</a></header>
+<main><article class="sheet">
+<h1>Terms and privacy</h1>
+<h2>Using Doxera</h2>
+<p>Only upload documents you have permission to process. Keep your original and check the result before relying on it. Conversion, compression and text recognition can change content or formatting. Each file can be up to 50 MB.</p>
+<h2>Your files</h2>
+<p>Doxera sends your files over HTTPS to the conversion service hosted by Render. Files, conversion options and any document password you enter are used to perform your request. Uploads and results use temporary server storage. Doxera normally removes the working files as it returns the result. A cleanup process removes abandoned working files within one hour under normal operation. A copy you download stays on your device.</p>
+<h2>Sessions and service logs</h2>
+<p>A temporary cookie protects your session. Doxera uses a keyed hash of your network address to count requests and limit excessive traffic. Render may process connection and request information for hosting and security. The one-hour document cleanup applies to working files. Hosting logs follow a separate retention schedule.</p>
+{% if config.PRIVACY_EMAIL %}<h2>Contact</h2><p>For privacy questions or a problem with the service, email <a href="mailto:{{ config.PRIVACY_EMAIL }}">{{ config.PRIVACY_EMAIL }}</a>.</p>{% endif %}
+<p><a href="/">Back to PDF tools</a></p>
+</article></main></body></html>

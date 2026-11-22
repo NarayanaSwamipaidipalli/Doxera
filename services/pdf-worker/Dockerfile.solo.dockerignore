@@ -1,5 +1,8 @@
 **
 !LICENSE
+!fetch_mupdf.py
+!native/
+!native/*.patch
 !app/
 !app/__init__.py
 !app/config.py

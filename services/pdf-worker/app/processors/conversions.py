@@ -1,3 +1,4 @@
+import io
 import os
 import csv
 import subprocess
@@ -25,35 +26,20 @@ def pdf_to_images(input_path: str, output_dir: str, dpi: int = 200, img_format: 
 
 def images_to_pdf(image_paths: List[str], output_path: str) -> str:
     """Converts a collection of images (JPG, PNG, WebP) into a consolidated PDF."""
-    result_doc = pymupdf.open()
-    
-    for img_path in image_paths:
-        try:
-            with Image.open(img_path) as img:
-                if img.mode in ("RGBA", "P"):
-                    img = img.convert("RGB")
-                    temp_rgb = img_path + ".rgb.jpg"
-                    img.save(temp_rgb, "JPEG")
-                    img_doc = pymupdf.open(temp_rgb)
-                    pdf_bytes = img_doc.convert_to_pdf()
-                    img_pdf = pymupdf.open("pdf", pdf_bytes)
-                    result_doc.insert_pdf(img_pdf)
-                    img_doc.close()
-                    img_pdf.close()
-                    if os.path.exists(temp_rgb):
-                        os.remove(temp_rgb)
+    with pymupdf.open() as result:
+        for path in image_paths:
+            with Image.open(path, formats=("PNG", "JPEG", "WEBP")) as image:
+                if image.format == "WEBP":
+                    # MuPDF does not read standalone WebP. Keep its decoded pixels and alpha.
+                    buffer = io.BytesIO()
+                    image.save(buffer, format="PNG")
+                    source = pymupdf.open(stream=buffer.getvalue(), filetype="png")
                 else:
-                    img_bytes = pymupdf.open(img_path)
-                    pdf_bytes = img_bytes.convert_to_pdf()
-                    img_pdf = pymupdf.open("pdf", pdf_bytes)
-                    result_doc.insert_pdf(img_pdf)
-                    img_bytes.close()
-                    img_pdf.close()
-        except Exception:
-            continue
-            
-    result_doc.save(output_path, garbage=4, deflate=True)
-    result_doc.close()
+                    source = pymupdf.open(path, filetype=image.format.lower())
+                with source:
+                    with pymupdf.open(stream=source.convert_to_pdf(), filetype="pdf") as page:
+                        result.insert_pdf(page)
+        result.save(output_path, garbage=4, deflate=True)
     return output_path
 
 def pdf_to_word(input_path: str, output_path: str, options: Optional[Dict[str, Any]] = None) -> str:
@@ -67,7 +53,7 @@ def pdf_to_excel(input_path: str, output_path: str) -> str:
     all_rows = []
     
     for page_idx, page in enumerate(doc):
-        tabs = page.find_tables()
+        tabs = page.find_tables(use_layout=False)
         if tabs.tables:
             for t_idx, tab in enumerate(tabs):
                 all_rows.append([f"--- Page {page_idx + 1} Table {t_idx + 1} ---"])

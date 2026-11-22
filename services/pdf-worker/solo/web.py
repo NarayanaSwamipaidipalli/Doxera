@@ -46,8 +46,13 @@ app.config.update(SECRET_KEY=key, SESSION_COOKIE_NAME="__Host-doxera_solo", SESS
                   SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Strict", PERMANENT_SESSION_LIFETIME=timedelta(hours=1),
                   MAX_CONTENT_LENGTH=100_100_000, MAX_FORM_PARTS=12, MAX_FORM_MEMORY_SIZE=128_000)
 trusted = [ipaddress.ip_network(value.strip()) for value in os.getenv("SOLO_TRUSTED_PROXY_CIDRS","").split(",") if value.strip()]
-SOURCE_ARCHIVE = "https://github.com/NarayanaSwamipaidipalli/Doxera/archive/refs/tags/solo-v1.0.0-rc.3.tar.gz"
-app.config["SOURCE_URL"] = SOURCE_ARCHIVE
+source_revision = os.getenv("RENDER_GIT_COMMIT") or os.getenv("SOLO_SOURCE_REVISION", "")
+if source_revision and not re.fullmatch(r"[0-9a-f]{40}", source_revision):
+    raise RuntimeError("Supply a full Git commit for the corresponding source")
+app.config["SOURCE_URL"] = (
+    f"https://github.com/NarayanaSwamipaidipalli/Doxera/archive/{source_revision}.tar.gz"
+    if source_revision else "https://github.com/NarayanaSwamipaidipalli/Doxera/archive/refs/tags/solo-v1.0.0-rc.4.tar.gz"
+)
 contact = os.getenv("SOLO_PRIVACY_EMAIL", "")
 if contact and not re.fullmatch(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", contact, re.ASCII):
     raise RuntimeError("Use a valid public privacy email address")
@@ -100,6 +105,11 @@ def home():
     if "csrf" not in session:
         session["csrf"] = secrets.token_urlsafe(32)
     return render_template("tools.html", tools=TOOLS, unavailable=UNAVAILABLE, coming_soon=COMING_SOON)
+
+
+@app.get("/terms-and-privacy")
+def terms_and_privacy():
+    return render_template("terms_privacy.html")
 
 
 @app.get("/tools/<slug>")

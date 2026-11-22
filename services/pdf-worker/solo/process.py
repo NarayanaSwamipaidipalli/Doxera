@@ -44,6 +44,9 @@ def restrict_process():
     resource.setrlimit(resource.RLIMIT_CPU, (80, 85))
     resource.setrlimit(resource.RLIMIT_FSIZE, (128_000_000, 128_000_000))
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    # Keep a single native parser below the 2 GiB service budget. Children inherit the cap.
+    address_space = 1536 * 1024 * 1024
+    resource.setrlimit(resource.RLIMIT_AS, (address_space, address_space))
 
 
 def bundle(paths, result):
@@ -55,7 +58,6 @@ def bundle(paths, result):
 
 def convert(tool, files, option, work, parameters=None):
     import pymupdf
-    from PIL import Image
     from app.upload_verification import check_format, MIME
     from solo.catalog import TOOLS
     from app.processors import advanced_tools as advanced, basic_tools as basic, conversions as conv
@@ -77,17 +79,13 @@ def convert(tool, files, option, work, parameters=None):
             valid_header = ext in signatures and header.startswith(signatures[ext])
         if not valid_header:
             raise ValueError("Document header does not match its file type")
-        check_format(str(file), file.name, MIME[ext])
+        check_format(str(file), file.name, MIME[ext], max_image_pixels=24_000_000)
         if ext == "pdf":
             with pymupdf.open(file) as pdf:
                 if len(pdf) > 150 or (pdf.needs_pass and tool != "unlock-pdf"):
                     raise ValueError("Use a smaller or unlocked document")
                 if not pdf.needs_pass and any(p.rect.get_area() > 4_000_000 for p in pdf):
                     raise ValueError("Page dimensions too large")
-        if ext in ("jpg","jpeg","png","webp"):
-            with Image.open(file) as img:
-                if img.width * img.height > 24_000_000:
-                    raise ValueError("Image dimensions too large")
     settings = parameters or {}
     summary = None
     first = str(files[0])
