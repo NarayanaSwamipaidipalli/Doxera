@@ -9,7 +9,7 @@ All authenticated endpoints require a Bearer token or an API Key:
 ```http
 Authorization: Bearer <JWT_ACCESS_TOKEN>
 # OR for programmatic server-to-server calls:
-X-API-Key: pdf_live_9a87f10b83e4499d91f2e1320491a0c8
+X-API-Key: <YOUR_API_KEY>
 ```
 
 Common Security Headers:

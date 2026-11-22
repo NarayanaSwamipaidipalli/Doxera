@@ -67,11 +67,14 @@ async function main() {
 
   // 2. Authentication
   log('🔐', 'Stage 2: Enterprise Authentication & Multi-Tenancy');
-  await runTest('Admin Authentication (admin@pdfforge.ai)', async () => {
+  await runTest('Admin authentication with an explicit test account', async () => {
+    const email = process.env.DOXERA_TEST_ADMIN_EMAIL;
+    const password = process.env.DOXERA_TEST_ADMIN_PASSWORD;
+    if (!email || !password) throw new Error('Set the test administrator email and password before running this check.');
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'admin@pdfforge.ai', password: 'AdminPassword123!' }),
+      body: JSON.stringify({ email, password }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
     const data = await res.json() as any;

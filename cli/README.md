@@ -15,7 +15,7 @@ npx pdfforge-cli --help
 ## Authentication
 
 ```bash
-pdfforge login --email admin@pdfforge.ai --password "AdminPassword123!"
+pdfforge login --email "$DOXERA_TEST_ADMIN_EMAIL" --password "$DOXERA_TEST_ADMIN_PASSWORD"
 ```
 
 ## Commands

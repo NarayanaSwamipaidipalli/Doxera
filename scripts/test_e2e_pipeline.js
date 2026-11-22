@@ -76,12 +76,15 @@ async function runAudit() {
 
   // 1. Authenticate with seeded Admin
   console.log('\n[1/6] Authenticating with API Gateway...');
+  const email = process.env.DOXERA_TEST_USER_EMAIL;
+  const password = process.env.DOXERA_TEST_USER_PASSWORD;
+  if (!email || !password) throw new Error('Set the test account email and password before running this check.');
   const loginRes = await request(`${API_BASE}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   }, JSON.stringify({
-    email: 'admin@pdfforge.ai',
-    password: 'AdminPassword123!',
+    email,
+    password,
   }));
 
   if (loginRes.statusCode !== 200) {
