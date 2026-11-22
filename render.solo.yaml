@@ -19,6 +19,6 @@ services:
       - key: SOLO_PRIVACY_EMAIL
         sync: false
       - key: SOLO_ACCESS_MODE
-        value: trial
+        value: public
       - key: SOLO_TRIAL_PASSWORD
         sync: false

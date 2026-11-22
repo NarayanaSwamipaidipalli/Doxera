@@ -1,6 +1,6 @@
 # Doxera Solo
 
-This source release runs 24 PDF tools behind an owner-only HTTP Basic gate on a single Linux web service. Word, Excel, PowerPoint and HTML imports display Coming soon. Seven earlier catalog entries remain unavailable. Accepted upload types are PDF, PNG, JPEG and WebP. This release candidate is for synthetic testing pending hosted verification of the patched native PDF library.
+The public Doxera Solo service runs 24 PDF tools without an account. Word, Excel, PowerPoint and HTML imports display Coming soon. Seven earlier catalog entries remain unavailable. Accepted upload types are PDF, PNG, JPEG and WebP. The site describes file handling and lists the operator and privacy contact on its [terms and privacy page](https://doxera-solo.onrender.com/terms-and-privacy).
 
 ## Build and run
 
@@ -17,7 +17,11 @@ docker run --rm --name doxera-solo --cpus 1 --memory 2g --memory-swap 2g \
   -p 127.0.0.1:10000:10000 -e SOLO_TRIAL_PASSWORD -e SOLO_SESSION_SECRET -e SOLO_PRIVACY_EMAIL doxera-solo:rc4
 ```
 
-Open localhost on port 10000 and sign in as `owner` with your trial password. The health endpoint is `/health`. Render provides HTTPS for the deployed service. Select `render.solo.yaml` and the `solo-tools` branch when using a Render Blueprint. Enter the privacy email and trial password when prompted. The Blueprint selects trial access. On Render the source link downloads the running Git commit. The tagged release is the [RC4 source archive](https://github.com/NarayanaSwamipaidipalli/Doxera/archive/refs/tags/solo-v1.0.0-rc.4.tar.gz). A missing trial password prevents startup. The Blueprint generates the signing secret. The temporary service storage is private to the running instance. Uploaded files are limited to 50 MB each. Results are streamed once. Normal completion removes the file paths immediately and the orphan sweeper runs before one hour.
+The local example defaults to trial access. Open localhost on port 10000 and sign in as `owner` with your trial password. The health endpoint is `/health`.
+
+The hosted service uses HTTPS and the `solo-tools` branch. Its `render.solo.yaml` Blueprint selects `SOLO_ACCESS_MODE=public` and generates the session signing secret. To restore owner-only access, set a strong `SOLO_TRIAL_PASSWORD` in Render and select `SOLO_ACCESS_MODE=trial`. Trial mode requires a password to start. The source link on the hosted site downloads the exact running commit.
+
+The temporary service storage is private to the running instance. Uploaded files are limited to 50 MB each. Results are streamed once. Normal completion removes the file paths immediately and the orphan sweeper runs before one hour.
 
 ## Verify with synthetic documents
 
