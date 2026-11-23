@@ -5,11 +5,11 @@ services:
   - type: web
     name: doxera-solo
     runtime: docker
-    branch: solo-tools
+    branch: main
     region: singapore
     plan: 1c-2g
     numInstances: 1
-    autoDeployTrigger: 'off'
+    autoDeploy: true
     dockerContext: ./services/pdf-worker
     dockerfilePath: ./services/pdf-worker/Dockerfile.solo
     healthCheckPath: /health
