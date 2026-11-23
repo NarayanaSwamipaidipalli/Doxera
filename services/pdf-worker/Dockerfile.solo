@@ -50,6 +50,7 @@ COPY solo /app/solo
 COPY ui/src/lib/tools.json /app/ui/src/lib/tools.json
 COPY LICENSE /app/LICENSE
 COPY --from=ui-build /build/dist/ /app/solo/static/ui/
+RUN install -d -o 10001 -g 10001 -m 0700 /data
 USER 10001:10001
 ENV PORT=10000
 CMD ["sh", "-c", "exec gunicorn --config /app/solo/gunicorn.conf.py --bind 0.0.0.0:${PORT:-10000} --timeout 120 solo.web:app"]

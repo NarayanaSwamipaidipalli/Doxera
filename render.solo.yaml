@@ -13,6 +13,10 @@ services:
     dockerContext: ./services/pdf-worker
     dockerfilePath: ./services/pdf-worker/Dockerfile.solo
     healthCheckPath: /health
+    disk:
+      name: doxera-data
+      mountPath: /data
+      sizeGB: 1
     envVars:
       - key: SOLO_SESSION_SECRET
         generateValue: true
@@ -21,4 +25,8 @@ services:
       - key: SOLO_ACCESS_MODE
         value: public
       - key: SOLO_TRIAL_PASSWORD
+        sync: false
+      - key: CF_ANALYTICS_TOKEN
+        sync: false
+      - key: ADMIN_PASSWORD
         sync: false

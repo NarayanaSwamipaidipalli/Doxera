@@ -12,6 +12,9 @@
 <p>Only upload documents you have permission to process. Keep your original and check the result before relying on it. Conversion, compression and text recognition can change content or formatting. Each file can be up to 50 MB.</p>
 <h2>Your files</h2>
 <p>Doxera sends your files over HTTPS to the conversion service hosted by Render. Files, conversion options and any document password you enter are used to perform your request. Uploads and results use temporary server storage. Doxera normally removes the working files as it returns the result. A cleanup process removes abandoned working files within one hour under normal operation. A copy you download stays on your device.</p>
+<h2>Anonymous usage statistics</h2>
+<p>We collect anonymous, cookie-free usage statistics to understand how Doxera is used. When enabled, Cloudflare Web Analytics measures page visits and performance without analytics cookies or user identifiers. Our server stores only daily totals by tool name and whether processing succeeded or failed. Usage statistics do not contain file names, file contents, IP addresses or user identifiers.</p>
+<p>These aggregate counts are retained separately from documents. The one-hour file deletion period does not apply to anonymous usage totals.</p>
 <h2>Sessions and service logs</h2>
 <p>A temporary cookie protects your session. Doxera uses a keyed hash of your network address to count requests and limit excessive traffic. Render may process connection and request information for hosting and security.</p>
 <p>Hosting logs are available in the Render dashboard for 7 days on Doxera’s Hobby workspace. The one-hour cleanup period applies to uploaded files, results and temporary working files. <a href="https://render.com/docs/logging#log-retention">Render’s log retention policy</a></p>
@@ -19,4 +22,5 @@
 <p><a href="/">Back to PDF tools</a></p>
 </article></main>
 {% include 'footer.html' %}
+{% include 'analytics.html' %}
 </body></html>

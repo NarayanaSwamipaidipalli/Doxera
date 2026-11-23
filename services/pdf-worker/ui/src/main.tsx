@@ -76,6 +76,7 @@ function App() {
             Uploads and results are automatically deleted within one hour.
             Downloads stay on your device.
           </p>
+          <p>We collect anonymous, cookie-free usage statistics.</p>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center [&_a]:underline">
             {root.dataset.privacy && (
               <a href={"mailto:" + root.dataset.privacy}>

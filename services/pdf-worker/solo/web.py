@@ -15,10 +15,11 @@ import sys
 import tempfile
 from datetime import timedelta
 
-from flask import Flask, Request, Response, abort, render_template, request, send_file, session
+from flask import Flask, Request, Response, abort, g, render_template, request, send_file, session
 from werkzeug.exceptions import HTTPException, RequestEntityTooLarge
 from solo.catalog import TOOLS, CATALOG, homepage_catalog
 from solo.storage import limit_ip, private_root, new_directory
+from solo import usage
 
 logger = logging.getLogger("gunicorn.error")
 
@@ -57,6 +58,8 @@ contact = os.getenv("SOLO_PRIVACY_EMAIL") or "roughnarayana@gmail.com"
 if contact and not re.fullmatch(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", contact, re.ASCII):
     raise RuntimeError("Use a valid public privacy email address")
 app.config["PRIVACY_EMAIL"] = contact
+app.config["CF_ANALYTICS_TOKEN"] = os.getenv("CF_ANALYTICS_TOKEN", "").strip()
+app.config["ADMIN_PASSWORD"] = os.getenv("ADMIN_PASSWORD", "")
 
 
 access_mode = os.environ.get("SOLO_ACCESS_MODE", "trial")
@@ -69,6 +72,9 @@ if access_mode == "trial" and len(trial_password) < 24:
 
 @app.before_request
 def trial_gate():
+    # Statistics always require their own admin credentials, including in trials.
+    if request.endpoint == "admin_stats":
+        return None
     if access_mode == "public" or (request.endpoint == "health" and request.method in {"GET", "HEAD"}):
         return None
     credentials = request.authorization
@@ -77,14 +83,28 @@ def trial_gate():
         password_ok = hmac.compare_digest((credentials.password or "").encode(), trial_password)
         if user_ok and password_ok:
             return None
-    return Response("Authentication required.", status=401,
+    return Response(render_template("tools.html", error="Authentication required."), status=401,
                     headers={"WWW-Authenticate": 'Basic realm="Doxera trial", charset="UTF-8"'})
 
 
 @app.after_request
 def headers(response):
+    if getattr(g, "usage_tool", None) and not getattr(g, "usage_recorded", False):
+        g.usage_recorded = True
+        try:
+            usage.record_tool_use(g.usage_tool, response.status_code < 400)
+        except (OSError, sqlite3.Error):
+            # Losing analytics must never change a conversion or expose request data.
+            logger.error("Anonymous tool usage count could not be saved")
+    scripts = "'self'"
+    connections = "'self'"
+    if app.config["CF_ANALYTICS_TOKEN"]:
+        scripts += " https://static.cloudflareinsights.com"
+        connections += " https://static.cloudflareinsights.com https://cloudflareinsights.com"
     response.headers.update({"Cache-Control":"private, no-store", "X-Content-Type-Options":"nosniff",
-        "Referrer-Policy":"no-referrer","Content-Security-Policy":"default-src 'none'; style-src 'self'; style-src-attr 'unsafe-inline'; worker-src 'self'; img-src 'self' blob: data:; font-src 'self' data:; script-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"})
+        "Referrer-Policy":"no-referrer","Content-Security-Policy":f"default-src 'none'; style-src 'self'; style-src-attr 'unsafe-inline'; worker-src 'self'; img-src 'self' blob: data:; font-src 'self' data:; script-src {scripts}; connect-src {connections}; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"})
+    if request.path.startswith("/admin/"):
+        response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"
     return response
 
 
@@ -118,6 +138,26 @@ def terms_and_privacy():
 @app.get("/about")
 def about():
     return render_template("about.html")
+
+
+@app.get("/admin/stats", strict_slashes=False)
+def admin_stats():
+    password = app.config["ADMIN_PASSWORD"]
+    if not password:
+        abort(404)
+    credentials = request.authorization
+    if credentials and credentials.type == "basic":
+        user_ok = hmac.compare_digest((credentials.username or "").encode("utf-8"), b"admin")
+        password_ok = hmac.compare_digest((credentials.password or "").encode("utf-8"), password.encode("utf-8"))
+        if user_ok and password_ok:
+            try:
+                stats = usage.read_stats()
+            except (OSError, sqlite3.Error):
+                logger.error("Anonymous tool usage statistics could not be read")
+                abort(503, "Statistics are temporarily unavailable. Please try again later.")
+            return render_template("stats.html", stats=stats)
+    return Response(render_template("tools.html", error="Admin authentication required."), status=401,
+                    headers={"WWW-Authenticate": 'Basic realm="Doxera statistics", charset="UTF-8"'})
 
 
 @app.get("/tools/<slug>")
@@ -252,6 +292,9 @@ def run_tool(slug):
                 upload.close()
             if slug == "compress-pdf":
                 input_bytes = target.stat().st_size
+            # Only actual processing attempts are counted; validation and throttling
+            # rejections have not run a tool and never enter the usage database.
+            g.usage_tool = slug
             process(slug, folder, option, parameters)
             outputs = list(folder.glob("download.*"))
             if len(outputs) != 1 or outputs[0].is_symlink():

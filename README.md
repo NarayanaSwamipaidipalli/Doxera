@@ -10,6 +10,18 @@ Display names, short descriptions and per-tool `enabled` flags live in `services
 
 The About page is `/about`. Shared footer credits name Narayana Swami Paidipalli and Potturi Naga Vydehi, with `roughnarayana@gmail.com` on the About page.
 
+## Anonymous analytics and private statistics
+
+Set `CF_ANALYTICS_TOKEN` to the site token from Cloudflare Web Analytics to enable the standard cookie-free beacon on the React UI and server-rendered pages. Leave it unset to omit the beacon and keep the CSP limited to local scripts and connections. Configure the analytics site's hostname to match Doxera's public hostname.
+
+Set `ADMIN_PASSWORD` to a strong password, then open `/admin/stats` over HTTPS and sign in with username `admin`. This uses HTTP Basic authentication and does not create a login cookie. The page is disabled when the password is unset; trial-owner credentials do not grant access to it.
+
+Tool usage is stored in `/data/usage.db` on the existing `doxera-data` Render disk (1 GB, mounted at `/data`). Without `/data`, local development uses `~/.local/share/doxera/usage.db`. The disk must be writable by the container's UID 10001. The Docker image creates `/data` with that ownership for local Docker volumes. Usage writes are atomic across workers. A statistics storage error is logged without request data and never prevents a tool download.
+
+The database contains only tool names, calendar dates, success totals and failure totals, one aggregate row per tool per day. Both Protect PDF routes share a counter. Attempts are counted after processing starts, including timeouts and failed output checks; rejected uploads, validation failures and page views are excluded. The stats page shows all-time totals and 30 daily totals, including zero-use days, grouped in India Standard Time (Asia/Kolkata). No file names, file contents, IP addresses or user identifiers are stored in usage statistics. These anonymous aggregates are retained separately from the temporary document cleanup.
+
+`render.solo.yaml` declares both new variables with `sync: false`. For an existing Render service, enter their values in the Dashboard; a Blueprint update does not populate new `sync: false` values. No real token or admin password is committed.
+
 ## Build and run
 
 Run these commands in Bash from the repository root on a machine with Docker. Generate a unique trial password in your password manager.

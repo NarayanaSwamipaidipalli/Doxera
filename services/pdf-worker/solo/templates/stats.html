@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Tool usage statistics · Doxera</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='tools.css') }}">
+</head><body>
+<header><a class="brand" href="/">Doxera</a><a href="/about">About</a></header>
+<main>
+<h1>Tool usage statistics</h1>
+<p class="intro">Anonymous totals for completed processing attempts. Daily totals use India Standard Time (Asia/Kolkata).</p>
+<dl class="stats-summary">
+<div><dt>All-time uses</dt><dd>{{ stats.totals.total }}</dd></div>
+<div><dt>Successful</dt><dd>{{ stats.totals.successes }}</dd></div>
+<div><dt>Failed</dt><dd>{{ stats.totals.failures }}</dd></div>
+</dl>
+<section aria-labelledby="tool-totals">
+<h2 id="tool-totals">Total uses per tool</h2>
+<div class="table-scroll"><table class="stats-table">
+<caption>All-time tool usage, including both Protect PDF URLs in one total</caption>
+<thead><tr><th scope="col">Tool</th><th scope="col">Total</th><th scope="col">Successful</th><th scope="col">Failed</th></tr></thead>
+<tbody>{% for tool in stats.tools %}<tr><th scope="row">{{ tool.name }}</th><td>{{ tool.total }}</td><td>{{ tool.successes }}</td><td>{{ tool.failures }}</td></tr>{% endfor %}</tbody>
+</table></div>
+</section>
+<section aria-labelledby="daily-totals">
+<h2 id="daily-totals">Uses per day: last 30 days</h2>
+<div class="table-scroll"><table class="stats-table">
+<caption>Today and the preceding 29 days; days without usage are included</caption>
+<thead><tr><th scope="col">Date (IST)</th><th scope="col">Total</th><th scope="col">Successful</th><th scope="col">Failed</th></tr></thead>
+<tbody>{% for day in stats.days %}<tr><th scope="row"><time datetime="{{ day.day }}">{{ day.day }}</time></th><td>{{ day.total }}</td><td>{{ day.successes }}</td><td>{{ day.failures }}</td></tr>{% endfor %}</tbody>
+</table></div>
+</section>
+</main>
+{% include 'footer.html' %}
+{% include 'analytics.html' %}
+</body></html>

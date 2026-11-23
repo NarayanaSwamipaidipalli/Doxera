@@ -24,3 +24,12 @@ footer { border-top: 1px solid #cdd5d1; margin-top: 2rem } footer h2 { margin-to
 .coming-tool { padding: 1rem; border: 1px solid #cbd4d0; border-radius: .45rem }
 .footer-links { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: .75rem 1.25rem; text-align: center }
 .footer-credit { color: #42544f; font-size: .75rem; text-align: center }
+.stats-summary { display: flex; flex-wrap: wrap; gap: 1rem; margin: 2rem 0 }
+.stats-summary div { flex: 1; min-width: 8rem; padding: 1rem; background: white; border: 1px solid #cbd4d0; border-radius: .45rem }
+.stats-summary dd { margin: .5rem 0 0; font-size: 2rem; font-weight: 700 }
+.table-scroll { overflow-x: auto }
+.stats-table { width: 100%; border-collapse: collapse; font-size: .9rem }
+.stats-table caption { text-align: left; padding: .5rem 0 1rem; color: #42544f }
+.stats-table th, .stats-table td { padding: .7rem; border-bottom: 1px solid #cbd4d0; text-align: right; font-variant-numeric: tabular-nums }
+.stats-table th:first-child { text-align: left }
+.stats-table thead { background: #e7f4ee }
