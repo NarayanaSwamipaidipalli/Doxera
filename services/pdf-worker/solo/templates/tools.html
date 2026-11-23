@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ tool.name if tool else 'PDF tools' }} · Doxera</title>
+{% if error %}<link rel="stylesheet" href="{{ url_for('static', filename='tools.css') }}">{% else %}
+<link rel="icon" href="/static/ui/icon.svg"><link rel="stylesheet" href="/static/ui/app.css">
+<script type="module" src="/static/ui/app.js"></script>
+<noscript><link rel="stylesheet" href="{{ url_for('static', filename='tools.css') }}"></noscript>
+{% endif %}
+</head>
+<body class="min-h-screen font-sans bg-[var(--background)] text-[var(--foreground)] selection:bg-brand-600 selection:text-white">
+{% if not error %}
+<div id="app" data-slug="{{ slug or '' }}" data-csrf="{{ session.csrf }}" data-source="{{ config.SOURCE_URL }}" data-privacy="{{ config.PRIVACY_EMAIL }}"
+ data-limits='{{ limits|tojson }}' data-coming='{{ coming_soon.keys()|list|tojson }}'></div>
+<noscript>
+{% endif %}
+<header><a class="brand" href="/">Doxera</a><a href="#privacy">File privacy</a></header>
+<main>
+{% if error %}
+<section class="sheet"><h1>Request stopped</h1><p role="alert">{{ error }}</p><a href="/">Choose a tool</a></section>
+{% elif tool %}
+<nav aria-label="Breadcrumb"><a href="/">PDF tools</a> / {{ tool.category }}</nav>
+<section class="sheet">
+<h1>{{ tool.name }}</h1>
+{% if tool.hint %}<p>{{ tool.hint }}</p>{% endif %}
+<form method="post" enctype="multipart/form-data">
+<input type="hidden" name="csrf" value="{{ session.csrf }}">
+<label for="files">Choose {{ 'files' if tool.maximum > 1 else 'a file' }}</label>
+<input id="files" name="files" type="file" {% if tool.maximum > 1 %}multiple{% endif %} required accept="{% for ext in tool.extensions %}.{{ ext }}{{ ',' if not loop.last }}{% endfor %}" aria-describedby="limits">
+<small id="limits">{{ tool.extensions|join(', ')|upper }} · 50 MB per file · 100 MB total · Up to 150 pages per PDF</small>
+{% if tool.prompt %}<label for="option">{{ tool.prompt }}</label>
+{% if tool.choices %}<select id="option" name="option">{% for value in tool.choices %}<option>{{ value }}</option>{% endfor %}</select>
+{% else %}<input id="option" name="option" maxlength="500" required type="{{ 'password' if 'password' in tool.prompt|lower else 'text' }}" autocomplete="off">{% endif %}{% endif %}
+<button type="submit">Process and download</button>
+</form>
+{% if slug == 'compress-pdf' %}
+<p id="compression-status" role="status"></p>
+<a id="compressed-download" download="compressed.pdf" hidden>Download compressed PDF</a>
+{% endif %}
+</section>
+{% else %}
+<section class="hero"><h1>Free PDF tools that respect your privacy</h1><p class="intro">Compress, merge, convert and protect PDFs. Files are deleted automatically within one hour.</p></section>
+<h2>{{ working_tool_count }} working PDF tools</h2>
+{% for category in ['Organize','Convert','Edit','Protect'] %}
+<section><h2>{{ category }}</h2><ul class="grid">{% for slug, item in homepage_tools.items() if item.category == category %}<li><a href="{{ url_for('tool_page',slug=slug) }}"><span>{{ item.name }}<small class="tool-description">{{ catalog[slug].description }}</small></span><span aria-hidden="true">↗</span></a></li>{% endfor %}</ul></section>
+{% endfor %}
+{% if coming_soon %}<section><h2>Coming soon</h2><ul class="grid">{% for slug, name in coming_soon.items() %}<li class="coming-tool">{{ name }}<small class="tool-description">{{ catalog[slug].description }}</small></li>{% endfor %}</ul></section>{% endif %}
+{% endif %}
+</main>
+{% include 'footer.html' %}
+{% if not error %}</noscript>{% endif %}</body></html>

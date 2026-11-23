@@ -1,0 +1,78 @@
+"""The anonymous edition's public tool contract. No account integrations."""
+from dataclasses import dataclass, replace
+import json
+from pathlib import Path
+
+
+# Shared display names, descriptions and publication flags for HTML and React.
+CATALOG = {
+    item["slug"]: item
+    for item in json.loads(
+        (Path(__file__).resolve().parents[1] / "ui/src/lib/tools.json").read_text(encoding="utf-8")
+    )
+}
+
+
+@dataclass(frozen=True)
+class Tool:
+    name: str
+    category: str
+    extensions: tuple = ("pdf",)
+    minimum: int = 1
+    maximum: int = 1
+    prompt: str = ""
+    choices: tuple = ()
+    hint: str = ""
+
+
+TOOLS = {
+    "compress-pdf": Tool("Compress PDF", "Organize", prompt="Compression", choices=("medium", "low", "high", "extreme")),
+    "merge-pdf": Tool("Merge PDFs", "Organize", minimum=2, maximum=8, hint="Files are merged in selection order."),
+    "split-pdf": Tool("Split PDF", "Organize", hint="Download one PDF per page, packaged together."),
+    "rotate-pdf": Tool("Rotate PDF", "Organize", prompt="Clockwise rotation", choices=("90", "180", "270")),
+    "delete-pdf-pages": Tool("Delete pages", "Organize", prompt="Pages to delete", hint="Use page numbers or ranges, such as 2, 4-6."),
+    "extract-pdf-pages": Tool("Extract pages", "Organize", prompt="Pages to keep", hint="Use page numbers or ranges, such as 1, 3-5."),
+    "reorder-pages": Tool("Reorder pages", "Organize", prompt="New page order", hint="List every page once, such as 3, 1, 2."),
+    "pdf-to-word": Tool("PDF to Word", "Convert"),
+    "pdf-to-excel": Tool("PDF to Excel", "Convert", hint="Extract tables and text into an XLSX workbook."),
+    "pdf-to-powerpoint": Tool("PDF to PowerPoint", "Convert", hint="Place each page on its own slide."),
+    "image-to-pdf": Tool("Images to PDF", "Convert", ("png","jpg","jpeg","webp"), maximum=8),
+    "pdf-to-image": Tool("PDF to PNG", "Convert", hint="Download a PNG per page at 200 DPI."),
+    "pdf-watermark": Tool("Watermark PDF", "Edit", prompt="Watermark text"),
+    "pdf-encryption": Tool("Protect PDF", "Protect", prompt="New password", hint="Use at least 8 characters for AES-256 encryption."),
+    "protect-pdf": Tool("Protect PDF", "Protect", prompt="New password", hint="Use at least 8 characters for AES-256 encryption."),
+    "unlock-pdf": Tool("Unlock PDF", "Protect", prompt="Current password"),
+    "bates-numbering": Tool("Bates numbering", "Edit", prompt="Number prefix", hint="For example, DOC-."),
+    "redact-pdf": Tool("Redact searchable text", "Protect", prompt="Word or phrase to remove", hint="Removes matching searchable text. Review every page before sharing."),
+    "sign-pdf": Tool("Sign PDF visually", "Edit", ("pdf","png"), minimum=1, maximum=2,
+                     hint="Choose one PDF and one PNG signature. Places a visual signature at the bottom of page one. No certificate is issued."),
+    "compare-pdf": Tool("Compare PDFs", "Edit", minimum=2, maximum=2, hint="Choose the original first and the revised file second."),
+    "pdf-metadata-editor": Tool("Edit PDF title", "Edit", prompt="New document title"),
+    "pdf-repair": Tool("Repair PDF", "Edit"),
+    "ocr-pdf": Tool("Make scans searchable", "Convert", prompt="Document language", choices=("eng","deu","fra","spa","jpn")),
+    "batch-processing": Tool("Batch compress PDFs", "Organize", minimum=2, maximum=8, hint="Compress each PDF separately and download a ZIP."),
+}
+
+COMING_SOON = {
+    "word-to-pdf": "Word to PDF",
+    "excel-to-pdf": "Excel to PDF",
+    "ppt-to-pdf": "PowerPoint to PDF",
+    "html-to-pdf": "HTML to PDF",
+}
+
+UNAVAILABLE = {
+    "ai-pdf-summary": "AI PDF Summary", "ai-pdf-chat": "PDF Chat",
+    "ai-document-qa": "Document Q&A", "ai-invoice-extraction": "Invoice Extraction",
+    "ai-contract-analysis": "Contract Analysis", "ai-resume-parser": "Résumé Parser",
+    "ai-document-translator": "Document Translator",
+}
+
+# Keep both encryption routes and every processor; publish only the canonical card.
+TOOLS = {slug: replace(tool, name=CATALOG[slug]["name"]) for slug, tool in TOOLS.items()}
+
+
+def homepage_catalog():
+    working = {slug: tool for slug, tool in TOOLS.items() if CATALOG[slug]["enabled"]}
+    coming = {slug: CATALOG[slug]["name"] for slug in COMING_SOON
+              if slug not in TOOLS and CATALOG[slug]["enabled"]}
+    return working, dict(list(coming.items())[:4])

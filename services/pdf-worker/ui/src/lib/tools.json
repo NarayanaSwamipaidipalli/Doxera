@@ -1,0 +1,317 @@
+[
+  {
+    "id": "compress",
+    "slug": "compress-pdf",
+    "name": "Compress PDF",
+    "category": "basic",
+    "accentColor": "from-emerald-500 to-teal-600",
+    "description": "Reduce file size with adjustable compression levels.",
+    "enabled": true
+  },
+  {
+    "id": "merge",
+    "slug": "merge-pdf",
+    "name": "Merge PDF",
+    "category": "basic",
+    "accentColor": "from-blue-500 to-indigo-600",
+    "description": "Combine multiple PDFs into one document.",
+    "enabled": true
+  },
+  {
+    "id": "split",
+    "slug": "split-pdf",
+    "name": "Split PDF",
+    "category": "basic",
+    "accentColor": "from-amber-500 to-orange-600",
+    "description": "Split a PDF into separate files by page or range.",
+    "enabled": true
+  },
+  {
+    "id": "rotate",
+    "slug": "rotate-pdf",
+    "name": "Rotate PDF",
+    "category": "basic",
+    "accentColor": "from-purple-500 to-indigo-600",
+    "description": "Turn PDF pages by 90, 180 or 270 degrees.",
+    "enabled": true
+  },
+  {
+    "id": "delete-pages",
+    "slug": "delete-pdf-pages",
+    "name": "Delete Pages",
+    "category": "basic",
+    "accentColor": "from-rose-500 to-red-600",
+    "description": "Remove unwanted pages from your PDF.",
+    "enabled": true
+  },
+  {
+    "id": "extract-pages",
+    "slug": "extract-pdf-pages",
+    "name": "Extract Pages",
+    "category": "basic",
+    "accentColor": "from-cyan-500 to-blue-600",
+    "description": "Save selected pages as a new PDF.",
+    "enabled": true
+  },
+  {
+    "id": "reorder-pages",
+    "slug": "reorder-pages",
+    "name": "Reorder Pages",
+    "category": "basic",
+    "accentColor": "from-violet-500 to-purple-600",
+    "description": "Drag pages into the order you need.",
+    "enabled": true
+  },
+  {
+    "id": "pdf-to-word",
+    "slug": "pdf-to-word",
+    "name": "PDF to Word",
+    "category": "convert",
+    "accentColor": "from-blue-600 to-blue-800",
+    "description": "Convert a PDF into an editable Word document.",
+    "enabled": true
+  },
+  {
+    "id": "pdf-to-excel",
+    "slug": "pdf-to-excel",
+    "name": "PDF to Excel",
+    "category": "convert",
+    "accentColor": "from-emerald-600 to-teal-800",
+    "description": "Extract PDF text and tables into an Excel workbook.",
+    "enabled": true
+  },
+  {
+    "id": "pdf-to-ppt",
+    "slug": "pdf-to-powerpoint",
+    "name": "PDF to PowerPoint",
+    "category": "convert",
+    "accentColor": "from-orange-600 to-red-600",
+    "description": "Turn PDF pages into a PowerPoint presentation.",
+    "enabled": true
+  },
+  {
+    "id": "word-to-pdf",
+    "slug": "word-to-pdf",
+    "name": "Word to PDF",
+    "category": "convert",
+    "accentColor": "from-blue-500 to-cyan-600",
+    "description": "Convert Word documents into PDFs.",
+    "enabled": true
+  },
+  {
+    "id": "excel-to-pdf",
+    "slug": "excel-to-pdf",
+    "name": "Excel to PDF",
+    "category": "convert",
+    "accentColor": "from-green-500 to-emerald-700",
+    "description": "Convert Excel spreadsheets into PDFs.",
+    "enabled": true
+  },
+  {
+    "id": "ppt-to-pdf",
+    "slug": "ppt-to-pdf",
+    "name": "PowerPoint to PDF",
+    "category": "convert",
+    "accentColor": "from-rose-500 to-orange-600",
+    "description": "Convert PowerPoint presentations into PDFs.",
+    "enabled": true
+  },
+  {
+    "id": "image-to-pdf",
+    "slug": "image-to-pdf",
+    "name": "Image to PDF",
+    "category": "convert",
+    "accentColor": "from-pink-500 to-rose-600",
+    "description": "Combine JPG, PNG and WebP images into a PDF.",
+    "enabled": true
+  },
+  {
+    "id": "pdf-to-jpg",
+    "slug": "pdf-to-image",
+    "name": "PDF to Image",
+    "category": "convert",
+    "accentColor": "from-fuchsia-500 to-pink-600",
+    "description": "Export each PDF page as a PNG image.",
+    "enabled": true
+  },
+  {
+    "id": "html-to-pdf",
+    "slug": "html-to-pdf",
+    "name": "HTML to PDF",
+    "category": "convert",
+    "accentColor": "from-indigo-500 to-violet-600",
+    "description": "Convert an HTML file into a PDF.",
+    "enabled": true
+  },
+  {
+    "id": "watermark",
+    "slug": "pdf-watermark",
+    "name": "Watermark PDF",
+    "category": "advanced",
+    "accentColor": "from-sky-500 to-cyan-600",
+    "description": "Add a text watermark to your PDF.",
+    "enabled": true
+  },
+  {
+    "id": "encrypt",
+    "slug": "pdf-encryption",
+    "name": "Protect PDF",
+    "category": "advanced",
+    "accentColor": "from-zinc-700 to-zinc-900",
+    "description": "Encrypt a PDF with a password and access permissions.",
+    "enabled": false
+  },
+  {
+    "id": "protect",
+    "slug": "protect-pdf",
+    "name": "Protect PDF",
+    "category": "advanced",
+    "accentColor": "from-slate-700 to-zinc-900",
+    "description": "Encrypt a PDF with a password and access permissions.",
+    "enabled": true
+  },
+  {
+    "id": "decrypt",
+    "slug": "unlock-pdf",
+    "name": "Unlock PDF",
+    "category": "advanced",
+    "accentColor": "from-amber-600 to-orange-600",
+    "description": "Remove PDF protection using the current password.",
+    "enabled": true
+  },
+  {
+    "id": "bates",
+    "slug": "bates-numbering",
+    "name": "Bates Numbering",
+    "category": "advanced",
+    "accentColor": "from-amber-600 to-yellow-700",
+    "description": "Add sequential reference numbers to PDF pages.",
+    "enabled": true
+  },
+  {
+    "id": "redact",
+    "slug": "redact-pdf",
+    "name": "Redact PDF",
+    "category": "advanced",
+    "accentColor": "from-red-600 to-zinc-900",
+    "description": "Permanently remove selected text or areas.",
+    "enabled": true
+  },
+  {
+    "id": "sign",
+    "slug": "sign-pdf",
+    "name": "Sign PDF",
+    "category": "advanced",
+    "accentColor": "from-indigo-600 to-slate-800",
+    "description": "Add a visual signature or sign with your certificate.",
+    "enabled": true
+  },
+  {
+    "id": "compare",
+    "slug": "compare-pdf",
+    "name": "Compare PDF",
+    "category": "advanced",
+    "accentColor": "from-amber-600 to-red-600",
+    "description": "Compare two PDFs and review their differences.",
+    "enabled": true
+  },
+  {
+    "id": "metadata",
+    "slug": "pdf-metadata-editor",
+    "name": "Metadata Editor",
+    "category": "advanced",
+    "accentColor": "from-slate-600 to-zinc-800",
+    "description": "Edit the title, author, subject and keywords.",
+    "enabled": true
+  },
+  {
+    "id": "repair",
+    "slug": "pdf-repair",
+    "name": "Repair PDF",
+    "category": "advanced",
+    "accentColor": "from-yellow-600 to-amber-700",
+    "description": "Try to recover and rebuild a damaged PDF.",
+    "enabled": true
+  },
+  {
+    "id": "ocr",
+    "slug": "ocr-pdf",
+    "name": "OCR PDF",
+    "category": "advanced",
+    "accentColor": "from-teal-500 to-emerald-600",
+    "description": "Make scanned PDFs searchable in five languages.",
+    "enabled": true
+  },
+  {
+    "id": "batch",
+    "slug": "batch-processing",
+    "name": "Batch Processing",
+    "category": "advanced",
+    "accentColor": "from-purple-600 to-indigo-700",
+    "description": "Compress several PDFs and download one ZIP.",
+    "enabled": true
+  },
+  {
+    "id": "ai-summary",
+    "slug": "ai-pdf-summary",
+    "name": "AI PDF Summary",
+    "category": "ai",
+    "accentColor": "from-violet-600 to-indigo-700",
+    "description": "Synthesize 100+ page contracts, financial reports, and academic papers into concise executive briefs.",
+    "enabled": false
+  },
+  {
+    "id": "ai-rag-chat",
+    "slug": "ai-pdf-chat",
+    "name": "PDF Chat",
+    "category": "ai",
+    "accentColor": "from-blue-600 to-violet-600",
+    "description": "Converse directly with multi-page documents with instant answers backed by verifiable page-level citations.",
+    "enabled": false
+  },
+  {
+    "id": "ai-qa",
+    "slug": "ai-document-qa",
+    "name": "Document Q&A",
+    "category": "ai",
+    "accentColor": "from-indigo-600 to-blue-600",
+    "description": "Deep question answering across complex corporate bylaws, regulatory filings, and manuals.",
+    "enabled": false
+  },
+  {
+    "id": "ai-invoice",
+    "slug": "ai-invoice-extraction",
+    "name": "Invoice Extraction",
+    "category": "ai",
+    "accentColor": "from-emerald-600 to-cyan-600",
+    "description": "Parse supplier invoices, receipts, and purchase orders into structured ERP JSON schemas.",
+    "enabled": false
+  },
+  {
+    "id": "ai-contract",
+    "slug": "ai-contract-analysis",
+    "name": "Contract Analysis",
+    "category": "ai",
+    "accentColor": "from-red-600 to-rose-700",
+    "description": "Detect high-risk indemnities, non-competes, liability caps, and termination clause pitfalls.",
+    "enabled": false
+  },
+  {
+    "id": "ai-resume",
+    "slug": "ai-resume-parser",
+    "name": "Résumé Parser",
+    "category": "ai",
+    "accentColor": "from-amber-600 to-orange-600",
+    "description": "Screen candidate resumes, extract experience timelines, education credentials, and core competencies.",
+    "enabled": false
+  },
+  {
+    "id": "ai-translate",
+    "slug": "ai-document-translator",
+    "name": "AI Document Translator",
+    "category": "ai",
+    "accentColor": "from-cyan-600 to-blue-700",
+    "description": "Translate documents across 50+ languages while preserving original vector layouts, tables, and typography.",
+    "enabled": false
+  }
+]

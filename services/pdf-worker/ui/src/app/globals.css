@@ -1,0 +1,271 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: Inter;
+  src: url('/static/ui/inter-latin.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+:root { --font-sans: Inter; }
+
+/* ---------------------------------------------------------------------------
+   Design tokens. Light is the default; .dark holds the premium midnight theme.
+   --------------------------------------------------------------------------- */
+:root {
+  /* Native controls, autofill, select popups and scrollbars follow the theme (see .dark). */
+  color-scheme: light;
+  --background: #ffffff;
+  --background-subtle: #f7f8fc;
+  --foreground: #0b0d17;
+  --muted: #5b6178;
+  --card-bg: rgba(255, 255, 255, 0.78);
+  --card-border: rgba(11, 13, 23, 0.09);
+  --elevated: #ffffff;
+  --accent: #2449f5;
+  --accent-soft: rgba(36, 73, 245, 0.1);
+  --ring: rgba(36, 73, 245, 0.45);
+  --grid: linear-gradient(to right, rgba(0, 0, 0, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.045) 1px, transparent 1px);
+  /* Form fields */
+  --field-bg: #ffffff;
+  --field-text: #0b0d17;
+  --field-placeholder: #6b7189;
+  --field-border: rgba(11, 13, 23, 0.16);
+  --field-border-hover: rgba(11, 13, 23, 0.3);
+  --field-disabled-bg: #f1f2f6;
+  --field-disabled-text: #6b7189;
+  --field-readonly-bg: #f7f8fc;
+  --field-autofill-bg: #eef2ff;
+  --field-invalid: #dc2626;
+  --field-invalid-ring: rgba(220, 38, 38, 0.3);
+  --field-valid: #059669;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #07080f;
+  --background-subtle: #0b0d17;
+  --foreground: #eef1f8;
+  --muted: #959cb8;
+  --card-bg: rgba(22, 26, 44, 0.66);
+  --card-border: rgba(255, 255, 255, 0.09);
+  --elevated: #101322;
+  --accent: #598eff;
+  --accent-soft: rgba(89, 142, 255, 0.14);
+  --ring: rgba(89, 142, 255, 0.5);
+  --grid: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  --field-bg: #0f1220;
+  --field-text: #eef1f8;
+  --field-placeholder: #8a91ad;
+  --field-border: rgba(255, 255, 255, 0.14);
+  --field-border-hover: rgba(255, 255, 255, 0.26);
+  --field-disabled-bg: #0b0d17;
+  --field-disabled-text: #7d849f;
+  --field-readonly-bg: #0c0f1a;
+  --field-autofill-bg: #141b33;
+  --field-invalid: #f87171;
+  --field-invalid-ring: rgba(248, 113, 113, 0.35);
+  --field-valid: #34d399;
+}
+
+/* --------------------------------------------------------------------------
+   Form fields. Browsers draw an unstyled field with their own light colours ("Field" = white) unless
+   color-scheme says otherwise, so any input without its own background classes turned white in dark mode
+   while inheriting light text. These base rules give every text field, textarea and select the theme's
+   colours. They use :where() (no specificity), so a component's own Tailwind classes still win; the state
+   rules below (invalid, valid, autofill) are deliberately stronger so they show on styled fields too.
+   -------------------------------------------------------------------------- */
+@layer base {
+  :where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"]), textarea, select) {
+    background-color: var(--field-bg);
+    color: var(--field-text);
+    border-color: var(--field-border);
+    caret-color: var(--accent);
+  }
+  /* Placeholders use the theme's grey everywhere (about 4.5:1 on fields in both themes); :root makes this win over
+     lighter per-component placeholder colours, which were hard to read in light mode. */
+  :root input::placeholder,
+  :root textarea::placeholder {
+    color: var(--field-placeholder);
+    opacity: 1;
+  }
+  :where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"], [type="hidden"]), textarea, select):where(:hover:not(:disabled, :focus)) {
+    border-color: var(--field-border-hover);
+  }
+  :where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"], [type="hidden"]), textarea, select):where(:focus-visible) {
+    border-color: var(--accent);
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
+  }
+  :where(input, textarea, select):where(:disabled) {
+    background-color: var(--field-disabled-bg);
+    color: var(--field-disabled-text);
+    cursor: not-allowed;
+  }
+  :where(input, textarea):where([readonly]) {
+    background-color: var(--field-readonly-bg);
+  }
+  select option,
+  select optgroup {
+    background-color: var(--field-bg);
+    color: var(--field-text);
+  }
+
+  /* Validation states win over a component's border colour. */
+  input[aria-invalid="true"],
+  textarea[aria-invalid="true"],
+  select[aria-invalid="true"] {
+    border-color: var(--field-invalid);
+  }
+  /* Separate rule: a browser that does not know :user-invalid drops only this one. */
+  input:user-invalid,
+  textarea:user-invalid,
+  select:user-invalid {
+    border-color: var(--field-invalid);
+  }
+  input[aria-invalid="true"]:focus-visible,
+  textarea[aria-invalid="true"]:focus-visible {
+    border-color: var(--field-invalid);
+    box-shadow: 0 0 0 3px var(--field-invalid-ring);
+  }
+  input[data-valid="true"],
+  textarea[data-valid="true"] {
+    border-color: var(--field-valid);
+  }
+
+  /* Browser autofill: keep the theme's colours instead of the browser's pale blue/yellow fill. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: var(--field-text);
+    caret-color: var(--field-text);
+    box-shadow: 0 0 0 1000px var(--field-autofill-bg) inset;
+    transition: background-color 600000s 0s, color 600000s 0s;
+  }
+  input:-webkit-autofill:focus-visible {
+    box-shadow: 0 0 0 1000px var(--field-autofill-bg) inset, 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+  }
+  input:autofill {
+    filter: none;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* --------------------------------------------------------------------------
+   Reusable surface + effect primitives
+   -------------------------------------------------------------------------- */
+@layer components {
+  .glass-panel {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid var(--card-border);
+  }
+
+  .surface {
+    background: var(--elevated);
+    border: 1px solid var(--card-border);
+  }
+
+  /* Gradient hairline border that survives rounded corners. */
+  .ring-gradient {
+    position: relative;
+  }
+  .ring-gradient::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(89, 142, 255, 0.55), rgba(139, 92, 246, 0.35) 45%, rgba(34, 211, 238, 0.3));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .text-gradient {
+    background-image: linear-gradient(110deg, var(--foreground) 10%, #598eff 42%, #a78bfa 62%, var(--foreground) 92%);
+    background-size: 220% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .bg-grid {
+    background-image: var(--grid);
+    background-size: 48px 48px;
+  }
+
+  /* Radial fade so decorative grids never reach the section edges. */
+  .mask-fade {
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 55%, transparent 100%);
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 55%, transparent 100%);
+  }
+
+  .focus-ring {
+    outline: none;
+  }
+  .focus-ring:focus-visible {
+    box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+  }
+
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: var(--accent-soft);
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+    animation: shimmer 1.8s infinite;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(11, 13, 23, 0.18);
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility: honour the OS reduced-motion preference everywhere.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  [data-motion-reveal] {
+    transform: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

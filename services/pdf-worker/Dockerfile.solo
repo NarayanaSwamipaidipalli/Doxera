@@ -1,0 +1,55 @@
+FROM node:22-alpine AS ui-deps
+WORKDIR /build
+COPY ui/package*.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
+FROM ui-deps AS ui-build
+COPY ui/ ./
+RUN npm run build
+
+FROM python:3.11-slim AS mupdf-download
+COPY fetch_mupdf.py /fetch_mupdf.py
+RUN python /fetch_mupdf.py
+
+# Build the C library for the pinned PyMuPDF wheel with upstream security backports.
+FROM gcc:14-trixie@sha256:a6f425a380ee03e682df3b436fc9077c544fb0fea0a9cab943c3b8320db10765 AS pdf-native
+WORKDIR /src
+COPY --from=mupdf-download /mupdf.tar.gz /tmp/mupdf.tar.gz
+COPY native/ /patches/
+RUN echo "dc85000640a45d90ca9b77b061f6ca67cce0c4d4fbecf8819647baf573eef101  /tmp/mupdf.tar.gz" | sha256sum -c - && tar -xzf /tmp/mupdf.tar.gz --strip-components=1 \
+    && patch --fuzz=0 -p1 -i /patches/mupdf-signature.patch \
+    && for fix in /patches/freetype-*.patch; do patch --fuzz=0 -d thirdparty/freetype -p1 -i "$fix" || exit 1; done \
+    && make -j4 OUT=build/solo-shared shared=yes build=release HAVE_GLUT=no HAVE_X11=no HAVE_PTHREAD=yes \
+        HAVE_LEPTONICA=yes HAVE_TESSERACT=yes barcode=yes XLIB_LDFLAGS=-Wl,-Bsymbolic \
+        XCFLAGS=-DTOFU_CJK_EXT XCXXFLAGS=-DTOFU_CJK_EXT build/solo-shared/libmupdf.so.28.6 \
+    && strip --strip-unneeded build/solo-shared/libmupdf.so.28.6
+
+FROM python:3.11-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 OMP_THREAD_LIMIT=1 OPENBLAS_NUM_THREADS=1 HOME=/tmp
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libreoffice-writer libreoffice-calc libreoffice-impress \
+    tesseract-ocr tesseract-ocr-eng tesseract-ocr-deu tesseract-ocr-fra tesseract-ocr-spa tesseract-ocr-jpn \
+    fonts-dejavu-core fonts-liberation libharfbuzz-subset0 \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --no-create-home --uid 10001 solo
+COPY solo/requirements.txt /app/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip python -m pip install -r /app/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -c "import ctypes; ctypes.CDLL('libseccomp.so.2')" \
+    && python -m pip install --upgrade pip==26.3 setuptools==84.2.1 \
+    && python -m pip check
+# Refresh vulnerable base libraries independently of the large Office dependency layer.
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --only-upgrade libc6 libc-bin zlib1g \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=pdf-native /src/build/solo-shared/libmupdf.so.28.6 /usr/local/lib/python3.11/site-packages/pymupdf/libmupdf.so.28.6
+RUN LD_BIND_NOW=1 python -c "import pymupdf; assert pymupdf.mupdf_version == '1.28.6'" \
+    && sha256sum /usr/local/lib/python3.11/site-packages/pymupdf/libmupdf.so.28.6
+COPY solo/runtime/app /app/app
+COPY solo /app/solo
+COPY ui/src/lib/tools.json /app/ui/src/lib/tools.json
+COPY LICENSE /app/LICENSE
+COPY --from=ui-build /build/dist/ /app/solo/static/ui/
+USER 10001:10001
+ENV PORT=10000
+CMD ["sh", "-c", "exec gunicorn --config /app/solo/gunicorn.conf.py --bind 0.0.0.0:${PORT:-10000} --timeout 120 solo.web:app"]
