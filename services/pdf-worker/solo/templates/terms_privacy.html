@@ -17,4 +17,6 @@
 <p>Hosting logs are available in the Render dashboard for 7 days on Doxera’s Hobby workspace. The one-hour cleanup period applies to uploaded files, results and temporary working files. <a href="https://render.com/docs/logging#log-retention">Render’s log retention policy</a></p>
 {% if config.PRIVACY_EMAIL %}<h2>Contact</h2><p>For privacy questions or a problem with the service, email <a href="mailto:{{ config.PRIVACY_EMAIL }}">{{ config.PRIVACY_EMAIL }}</a>.</p>{% endif %}
 <p><a href="/">Back to PDF tools</a></p>
-</article></main></body></html>
+</article></main>
+{% include 'footer.html' %}
+</body></html>

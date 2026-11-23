@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 
 import { useReducedMotion } from 'framer-motion';
-import { tools as PDF_TOOLS } from './catalog';
+import { workingTools as PDF_TOOLS, comingSoonTools, type Tool } from './catalog';
 import { Button } from '@/components/ui/Button';
 import { Card, SectionHeading } from '@/components/ui/Card';
 import { Reveal, Stagger, StaggerItem } from '@/components/ui/Motion';
@@ -21,6 +21,29 @@ const CATEGORY_LABELS: Record<string, string> = {
 function CatalogLink({available, href, children, className}: {available:boolean;href:string;children:React.ReactNode;className:string}) {
   return available ? <a href={href} className={className}>{children}</a> : <div className={className} aria-disabled="true">{children}</div>;
 }
+function ToolCard({tool}: {tool: Tool}) {
+  return (
+    <StaggerItem>
+      <CatalogLink available={tool.available}
+        href={`/tools/${tool.slug}`}
+        className="focus-ring group flex h-full items-start gap-3 rounded-xl border border-black/[0.07] bg-white/60 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-500/40 hover:shadow-card dark:border-white/[0.07] dark:bg-white/[0.03] dark:hover:shadow-card-dark"
+      >
+        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-500/10 text-brand-600 dark:text-brand-300">
+          <FileText className="h-4 w-4" aria-hidden />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-sm font-semibold text-ink-900 dark:text-white">
+            {tool.name}
+          </span>
+          <span className="mt-0.5 block text-xs leading-relaxed text-ink-500 dark:text-zinc-400">
+            {tool.description}
+          </span>
+        </span>
+      </CatalogLink>
+    </StaggerItem>
+  );
+}
+
 export default function HomePage({onPick}: {onPick:(file:File)=>void}) {
 
   const reduce = useReducedMotion();
@@ -45,7 +68,7 @@ export default function HomePage({onPick}: {onPick:(file:File)=>void}) {
       { id: 'convert', count: PDF_TOOLS.filter((t) => t.category === 'convert').length },
       { id: 'advanced', count: PDF_TOOLS.filter((t) => t.category === 'advanced').length },
       { id: 'ai', count: PDF_TOOLS.filter((t) => t.category === 'ai').length },
-    ],
+    ].filter((category) => category.count > 0),
     [],
   );
 
@@ -66,24 +89,24 @@ export default function HomePage({onPick}: {onPick:(file:File)=>void}) {
 
             <Reveal delay={0.06}>
               <h1 className="text-balance text-4xl font-bold leading-[1.08] tracking-tight text-ink-900 dark:text-white sm:text-5xl md:text-6xl lg:text-7xl">
-                Every document.
+                Free PDF tools
                 <br />
                 <span className={cn('text-gradient', !reduce && 'animate-gradient-pan')}>
-                  One powerful workspace.
+                  that respect your privacy
                 </span>
               </h1>
             </Reveal>
 
             <Reveal delay={0.12}>
               <p className="mx-auto mt-6 max-w-xl text-pretty text-base leading-relaxed text-ink-600 dark:text-zinc-400 md:text-lg">
-                Compress, convert, sign and organize your PDFs.
+                Compress, merge, convert and protect PDFs. Files are deleted automatically within one hour.
               </p>
             </Reveal>
 
             <Reveal delay={0.18}>
               <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
 
-                <Button href="#tools" variant="secondary" size="lg" className="w-full sm:w-auto">
+                <Button href="#tools" variant="secondary" size="lg" className="h-14 w-full sm:w-auto">
                   Browse all tools
                 </Button>
               </div>
@@ -107,7 +130,7 @@ export default function HomePage({onPick}: {onPick:(file:File)=>void}) {
           <Reveal>
             <SectionHeading
 
-              title={`All ${PDF_TOOLS.length} tools`}
+              title={`${PDF_TOOLS.length} working PDF tools`}
               description="Search or filter to find the one you need."
             />
           </Reveal>
@@ -181,29 +204,22 @@ export default function HomePage({onPick}: {onPick:(file:File)=>void}) {
               className="mt-12 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
             >
               {filteredTools.map((tool) => (
-                <StaggerItem key={tool.slug}>
-                  <CatalogLink available={tool.available}
-                    href={`/tools/${tool.slug}`}
-                    className="focus-ring group flex h-full items-start gap-3 rounded-xl border border-black/[0.07] bg-white/60 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-500/40 hover:shadow-card dark:border-white/[0.07] dark:bg-white/[0.03] dark:hover:shadow-card-dark"
-                  >
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-500/10 text-brand-600 dark:text-brand-300">
-                      <FileText className="h-4 w-4" aria-hidden />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold text-ink-900 dark:text-white">
-                        {tool.name}{!tool.available && <small className="block text-xs text-ink-500">{tool.status}</small>}
-                      </span>
-                      <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-ink-500 dark:text-zinc-400">
-                        {tool.description}
-                      </span>
-                    </span>
-                  </CatalogLink>
-                </StaggerItem>
+                <ToolCard key={tool.slug} tool={tool} />
               ))}
             </Stagger>
           )}
         </div>
       </section>
+      {comingSoonTools.length > 0 && (
+        <section id="coming-soon" aria-labelledby="coming-soon-heading" className="border-t border-black/5 py-12 dark:border-white/5 md:py-16">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <h2 id="coming-soon-heading" className="text-2xl font-semibold tracking-tight text-ink-900 dark:text-white">Coming soon</h2>
+            <Stagger gap={0.03} className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {comingSoonTools.map((tool) => <ToolCard key={tool.slug} tool={tool} />)}
+            </Stagger>
+          </div>
+        </section>
+      )}
 
     </div>
   );

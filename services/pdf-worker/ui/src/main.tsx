@@ -76,7 +76,7 @@ function App() {
             Uploads and results are automatically deleted within one hour.
             Downloads stay on your device.
           </p>
-          <div className="flex flex-wrap gap-x-5 gap-y-2 underline">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center [&_a]:underline">
             {root.dataset.privacy && (
               <a href={"mailto:" + root.dataset.privacy}>
                 {root.dataset.privacy}
@@ -86,7 +86,11 @@ function App() {
               <a href={root.dataset.source}>Source code for this version</a>
             )}
             <a href="/terms-and-privacy">Terms and privacy</a>
+            <a href="/about">About</a>
             <a href="/static/ui/licenses.txt">Third-party notices</a>
+            <small className="text-center text-xs text-ink-500 dark:text-zinc-400">
+              Built by Narayana Swami Paidipalli and Potturi Naga Vydehi
+            </small>
           </div>
         </div>
       </footer>

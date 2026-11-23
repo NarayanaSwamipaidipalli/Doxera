@@ -1,6 +1,12 @@
 # Doxera Solo
 
-The public Doxera Solo service runs 24 PDF tools without an account. Word, Excel, PowerPoint and HTML imports display Coming soon. Seven earlier catalog entries remain unavailable. Accepted upload types are PDF, PNG, JPEG and WebP. The site describes file handling and lists the operator and privacy contact on its [terms and privacy page](https://doxera-solo.onrender.com/terms-and-privacy).
+The public Doxera Solo service offers 23 distinct working PDF tools without an account. The two existing encryption URLs share one Protect PDF tool. Word, Excel, PowerPoint and HTML imports display Coming soon. Seven earlier catalog entries are disabled and hidden from the homepage. Accepted upload types are PDF, PNG, JPEG and WebP. The site describes file handling and lists the operator and privacy contact on its [terms and privacy page](https://doxera-solo.onrender.com/terms-and-privacy).
+
+## Homepage catalog
+
+Display names, short descriptions and per-tool `enabled` flags live in `services/pdf-worker/ui/src/lib/tools.json`, shared by React and the UTF-8 Python template loader. Set `enabled` to `false` to hide a card. To publish a tool later, implement and register its processor in `solo/catalog.py` before setting `enabled` to `true`; a display flag does not enable processing. Coming soon previews are capped at four. The legacy `/tools/pdf-encryption` route still works but is excluded from the 23-tool marketing count. Rebuild the UI and service after changing the catalog.
+
+The About page is `/about`. Shared footer credits name Narayana Swami Paidipalli and Potturi Naga Vydehi, with `roughnarayana@gmail.com` on the About page.
 
 ## Build and run
 

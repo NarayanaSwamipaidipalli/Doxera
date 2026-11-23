@@ -21,3 +21,8 @@ export const tools = entries.map((entry) => {
   };
 });
 export type Tool = (typeof tools)[number];
+
+export const workingTools = tools.filter((tool) => tool.enabled && tool.available);
+export const comingSoonTools = tools
+  .filter((tool) => tool.enabled && !tool.available && tool.status === "Coming soon")
+  .slice(0, 4);

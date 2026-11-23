@@ -5,6 +5,9 @@ const fs = require("node:fs");
 const origin = "http://127.0.0.1:10000";
 const fixture = fs.readFileSync("/qa/fixture.pdf");
 const file = (name) => ({ name, mimeType: "application/pdf", buffer: fixture });
+const httpCredentials = process.env.SOLO_TRIAL_PASSWORD
+  ? {username: "owner", password: process.env.SOLO_TRIAL_PASSWORD}
+  : undefined;
 
 async function main() {
   const browser = await chromium.launch({
@@ -13,10 +16,7 @@ async function main() {
   });
   try {
     const ctx = await browser.newContext({
-      httpCredentials: {
-        username: "owner",
-        password: process.env.SOLO_TRIAL_PASSWORD,
-      },
+      httpCredentials,
       viewport: { width: 1440, height: 1000 },
       reducedMotion: "reduce",
     });
@@ -30,16 +30,31 @@ async function main() {
         external.push(new URL(r.url()).origin);
     });
     await page.goto(origin);
-    await page.getByRole("heading", { name: "All 35 tools" }).waitFor();
-    assert.equal(await page.locator('#tools a[href^="/tools/"]').count(), 24);
+    await page.getByRole("heading", { name: "23 working PDF tools" }).waitFor();
+    assert.equal(await page.locator('#tools a[href^="/tools/"]').count(), 23);
     assert.equal(
-      await page.getByText("Coming soon", { exact: true }).count(),
+      await page.locator('#coming-soon [aria-disabled="true"]').count(),
       4,
     );
     assert.equal(
       await page.getByText("Unavailable", { exact: true }).count(),
-      7,
+      0,
     );
+    assert.equal(await page.getByRole("heading", { level: 1 }).innerText(), "Free PDF tools\nthat respect your privacy");
+    assert.equal(await page.locator('#coming-soon a[href^="/tools/"]').count(), 0);
+    assert.equal(await page.locator('#tools a[href="/tools/pdf-encryption"]').count(), 0);
+    assert.equal(await page.getByRole("link", { name: /^Protect PDF/ }).count(), 1);
+    for (const size of [{width: 375, height: 812}, {width: 812, height: 375}, {width: 1440, height: 1000}]) {
+      await page.setViewportSize(size);
+      for (const theme of ["light", "dark"]) {
+        await page.evaluate((theme) => document.documentElement.classList.toggle("dark", theme === "dark"), theme);
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+        await page.getByText("Built by Narayana Swami Paidipalli and Potturi Naga Vydehi", {exact: true}).waitFor();
+      }
+    }
+    await page.getByRole("searchbox", {name: "Search tools"}).fill("password");
+    assert.equal(await page.locator('#tools a[href^="/tools/"]').count(), 2);
+    await page.getByRole("searchbox", {name: "Search tools"}).fill("");
     assert.match(
       await page
         .getByRole("link", { name: "Source code for this version" })
@@ -60,9 +75,21 @@ async function main() {
         .first()
         .waitFor({ state: "attached" });
       assert.ok(await page.getByRole("heading", { level: 1 }).innerText());
+      await page.getByText("Built by Narayana Swami Paidipalli and Potturi Naga Vydehi", {exact: true}).waitFor();
     }
+    for (const route of ["/about", "/terms-and-privacy", "/missing-page"]) {
+      await page.goto(origin + route);
+      await page.getByText("Built by Narayana Swami Paidipalli and Potturi Naga Vydehi", {exact: true}).waitFor();
+    }
+    const noJS = await browser.newContext({javaScriptEnabled: false, httpCredentials});
+    const fallback = await noJS.newPage();
+    await fallback.goto(origin);
+    assert.equal(await fallback.locator('.grid a[href^="/tools/"]').count(), 23);
+    assert.equal(await fallback.locator('.coming-tool').count(), 4);
+    assert.equal(await fallback.getByText("Unavailable", {exact: false}).count(), 0);
+    await noJS.close();
     console.log(
-      "PASS browser catalog, 24 forms, 11 disabled entries, source and privacy",
+      "PASS browser catalog, 23 tools, four previews, responsive themes, search, shared footer and no-JavaScript homepage",
     );
     async function open(slug, files) {
       await page.goto(origin + "/tools/" + slug);

@@ -40,15 +40,13 @@
 {% endif %}
 </section>
 {% else %}
-<h1>PDF tools</h1><p class="intro">Choose a tool, upload your files and download the result.</p>
+<section class="hero"><h1>Free PDF tools that respect your privacy</h1><p class="intro">Compress, merge, convert and protect PDFs. Files are deleted automatically within one hour.</p></section>
+<h2>{{ working_tool_count }} working PDF tools</h2>
 {% for category in ['Organize','Convert','Edit','Protect'] %}
-<section><h2>{{ category }}</h2><ul class="grid">{% for slug, item in tools.items() if item.category == category %}<li><a href="{{ url_for('tool_page',slug=slug) }}">{{ item.name }} <span aria-hidden="true">↗</span></a></li>{% endfor %}</ul></section>
+<section><h2>{{ category }}</h2><ul class="grid">{% for slug, item in homepage_tools.items() if item.category == category %}<li><a href="{{ url_for('tool_page',slug=slug) }}"><span>{{ item.name }}<small class="tool-description">{{ catalog[slug].description }}</small></span><span aria-hidden="true">↗</span></a></li>{% endfor %}</ul></section>
 {% endfor %}
-<section><h2>Coming soon</h2><ul>{% for name in coming_soon.values() %}<li>{{ name }}</li>{% endfor %}</ul></section>
-<details><summary>Unavailable tools ({{ unavailable|length }})</summary><ul>{% for name in unavailable.values() %}<li>{{ name }}</li>{% endfor %}</ul></details>
+{% if coming_soon %}<section><h2>Coming soon</h2><ul class="grid">{% for slug, name in coming_soon.items() %}<li class="coming-tool">{{ name }}<small class="tool-description">{{ catalog[slug].description }}</small></li>{% endfor %}</ul></section>{% endif %}
 {% endif %}
 </main>
-<footer id="privacy"><h2>File privacy</h2><p>Uploads and results use temporary storage and are automatically deleted within one hour. We normally remove the files before sending your download. Keep your downloaded copy if you need it again.</p>
-{% if config.PRIVACY_EMAIL %}<p>Privacy contact <a href="mailto:{{ config.PRIVACY_EMAIL }}">{{ config.PRIVACY_EMAIL }}</a></p>{% endif %}
-{% if config.SOURCE_URL %}<a href="{{ config.SOURCE_URL }}">Source code for this version</a>{% endif %} <a href="/terms-and-privacy">Terms and privacy</a></footer>
+{% include 'footer.html' %}
 {% if not error %}</noscript>{% endif %}</body></html>

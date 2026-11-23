@@ -19,3 +19,8 @@ form { display: grid; gap: .65rem; padding: clamp(1rem,4vw,2rem); background: wh
 label { font-weight: 650 } input, select, button { font: inherit; padding: .7rem; border-radius: .35rem; max-width: 100% }
 input, select { border: 1px solid #798c83; width: 100% } button { justify-self: start; margin-top: .7rem; background: #195647; color: white; border: 0; cursor: pointer }
 footer { border-top: 1px solid #cdd5d1; margin-top: 2rem } footer h2 { margin-top: 0 } footer p { font-size: .95rem }
+.hero { padding: 1rem 0 2rem }
+.tool-description { display: block; margin-top: .35rem; color: #42544f; font-size: .8rem; font-weight: 400 }
+.coming-tool { padding: 1rem; border: 1px solid #cbd4d0; border-radius: .45rem }
+.footer-links { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: .75rem 1.25rem; text-align: center }
+.footer-credit { color: #42544f; font-size: .75rem; text-align: center }

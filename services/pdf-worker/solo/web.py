@@ -16,8 +16,8 @@ import tempfile
 from datetime import timedelta
 
 from flask import Flask, Request, Response, abort, render_template, request, send_file, session
-from werkzeug.exceptions import RequestEntityTooLarge
-from solo.catalog import TOOLS, UNAVAILABLE, COMING_SOON
+from werkzeug.exceptions import HTTPException, RequestEntityTooLarge
+from solo.catalog import TOOLS, CATALOG, homepage_catalog
 from solo.storage import limit_ip, private_root, new_directory
 
 logger = logging.getLogger("gunicorn.error")
@@ -90,7 +90,10 @@ def headers(response):
 
 @app.context_processor
 def tool_limits():
-    return {"limits": {slug: {"min": t.minimum, "max": t.maximum, "extensions": t.extensions}
+    working, coming = homepage_catalog()
+    return {"homepage_tools": working, "coming_soon": coming, "catalog": CATALOG,
+            "working_tool_count": len(working),
+            "limits": {slug: {"min": t.minimum, "max": t.maximum, "extensions": t.extensions}
                        for slug, t in TOOLS.items()}}
 
 
@@ -104,12 +107,17 @@ def home():
     session.permanent = True
     if "csrf" not in session:
         session["csrf"] = secrets.token_urlsafe(32)
-    return render_template("tools.html", tools=TOOLS, unavailable=UNAVAILABLE, coming_soon=COMING_SOON)
+    return render_template("tools.html")
 
 
 @app.get("/terms-and-privacy")
 def terms_and_privacy():
     return render_template("terms_privacy.html")
+
+
+@app.get("/about")
+def about():
+    return render_template("about.html")
 
 
 @app.get("/tools/<slug>")
@@ -119,7 +127,7 @@ def tool_page(slug):
     session.permanent = True
     if "csrf" not in session:
         session["csrf"] = secrets.token_urlsafe(32)
-    return render_template("tools.html", tool=TOOLS[slug], slug=slug, tools=TOOLS, unavailable=UNAVAILABLE, coming_soon=COMING_SOON)
+    return render_template("tools.html", tool=TOOLS[slug], slug=slug)
 
 
 @app.errorhandler(413)
@@ -158,12 +166,11 @@ def process(slug, folder, option, parameters=None):
             abort(422, "Conversion failed. Check the document type, page selection or password, or try a smaller file.")
 
 
-@app.errorhandler(422)
-@app.errorhandler(429)
-@app.errorhandler(503)
-@app.errorhandler(403)
+@app.errorhandler(HTTPException)
 def failed(error):
-    return render_template("tools.html", error=error.description), error.code
+    response = error.get_response()
+    response.set_data(render_template("tools.html", error=error.description))
+    return response
 
 
 def report_download(pdf, summary, slug):
